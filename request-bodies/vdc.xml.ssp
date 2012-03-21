@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<virtualDatacenter>
+	<link href="http://localhost:8080/api/admin/datacenters/<%= datacenterId %>" rel="datacenter" />
+	<link href="http://localhost:8080/api/admin/enterprises/<%= enterpriseId %>" rel="enterprise" />
+	<cpuHard>0</cpuHard>
+	<cpuSoft>0</cpuSoft>
+	<hdHard>0</hdHard>
+	<hdSoft>0</hdSoft>
+	<publicIpsHard>0</publicIpsHard>
+	<publicIpsSoft>0</publicIpsSoft>
+	<ramHard>0</ramHard>
+	<ramSoft>0</ramSoft>
+	<storageHard>0</storageHard>
+	<storageSoft>0</storageSoft>
+	<vlansHard>0</vlansHard>
+	<vlansSoft>0</vlansSoft>
+	<hypervisorType>VMX_04</hypervisorType>
+	<name><%= name %></name>
+	<network>
+		<address>192.168.0.0</address>
+		<gateway>192.168.0.1</gateway>
+		<mask>24</mask>
+		<name>default_private_network</name>
+		<primaryDNS></primaryDNS>
+		<secondaryDNS></secondaryDNS>
+		<sufixDNS></sufixDNS>
+	</network>
+</virtualDatacenter>

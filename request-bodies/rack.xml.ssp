@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rack>
+	<haEnabled>false</haEnabled>
+	<longDescription></longDescription>
+	<name><%= name %></name>
+	<nrsq>10</nrsq>
+	<shortDescription></shortDescription>
+	<vlanIdMax>4094</vlanIdMax>
+	<vlanIdMin>2</vlanIdMin>
+	<vlanPerVdcReserved>1</vlanPerVdcReserved>
+	<vlansIdAvoided></vlansIdAvoided>
+</rack>

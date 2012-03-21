@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<datacenter>
+	<location>a</location>
+	<name>mydatacenter</name>
+	<remoteServices>
+		<remoteService>
+			<id>0</id>
+			<status>0</status>
+			<type>VIRTUAL_FACTORY</type>
+			<uri>http://<%= remoteservicesIp %>/virtualfactory</uri>
+		</remoteService>
+		<remoteService>
+			<id>0</id>
+			<status>0</status>
+			<type>VIRTUAL_SYSTEM_MONITOR</type>
+			<uri>http://<%= remoteservicesIp %>/vsm</uri>
+		</remoteService>
+		<remoteService>
+			<id>0</id>
+			<status>0</status>
+			<type>APPLIANCE_MANAGER</type>
+			<uri>http://<%= remoteservicesIp %>/am</uri>
+		</remoteService>
+		<remoteService>
+			<id>0</id>
+			<status>0</status>
+			<type>NODE_COLLECTOR</type>
+			<uri>http://<%= remoteservicesIp %>/nodecollector</uri>
+		</remoteService>
+		<remoteService>
+			<id>0</id>
+			<status>0</status>
+			<type>STORAGE_SYSTEM_MONITOR</type>
+			<uri>http://<%= remoteservicesIp %>/ssm</uri>
+		</remoteService>
+		<remoteService>
+			<id>0</id>
+			<status>0</status>
+			<type>DHCP_SERVICE</type>
+			<uri>omapi://<%= remoteservicesIp %></uri>
+		</remoteService>
+		<remoteService>
+			<id>0</id>
+			<status>0</status>
+			<type>BPM_SERVICE</type>
+			<uri>http://<%= remoteservicesIp %>/bpm-async</uri>
+		</remoteService>
+	</remoteServices>
+</datacenter>

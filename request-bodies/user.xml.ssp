@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<user>
+	<link href="http://localhost:8080/api/admin/roles/2" rel="role" />
+	<active>true</active>
+	<authType>ABIQUO</authType>
+	<availableVirtualDatacenters></availableVirtualDatacenters>
+	<description></description>
+	<email><%= lusername %>@a.com</email>
+	<locale>en_US</locale>
+	<name><%= lusername %></name>
+	<nick><%= lusernick %></nick>
+	<password>a</password>
+	<surname>a</surname>
+</user>

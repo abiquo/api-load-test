@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<virtualAppliance>
+	<name><%= name %></name>
+	<error>0</error>
+	<highDisponibility>0</highDisponibility>
+	<publicApp>0</publicApp>
+</virtualAppliance>

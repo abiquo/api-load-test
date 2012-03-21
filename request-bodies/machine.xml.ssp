@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<machine>
+
+    <description>mymachine</description>
+    <name>mymachine</name>
+
+    <ip><%= hypervisorIp %></ip>
+    <ipService><%= hypervisorIp %></ipService>
+    <type><%= hypervisorType %></type>
+    <port>443</port>
+
+    <user>root</user>
+    <password>temporal</password>
+    
+    <state>MANAGED</state>
+    
+    <cpu>2</cpu>
+    <cpuUsed>0</cpuUsed>
+    <ram>6138</ram>
+    <ramUsed>0</ramUsed>
+
+    <virtualSwitch>vSwitch0</virtualSwitch>
+    <initiatorIQN>iqn.1998-01.com.vmware:localhost-2520c1b4</initiatorIQN>
+    
+    <ipmiIP></ipmiIP>
+    <ipmiPassword></ipmiPassword>
+    <ipmiPort>0</ipmiPort>
+    <ipmiUser></ipmiUser>
+    
+    <datastores>
+        <datastore>
+            <datastoreUUID>618a5bc4-63f6-48ec-a15d-57d474e54bac</datastoreUUID>
+            <directory></directory>
+            <enabled>true</enabled>
+            <id>0</id>
+            <name>datastore1 (1)</name>
+            <rootPath>datastore1 (1)</rootPath>
+            <size>244544700416</size>
+            <usedSize>20713570304</usedSize>
+        </datastore>
+    </datastores>
+
+</machine>
