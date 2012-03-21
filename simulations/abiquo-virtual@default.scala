@@ -184,7 +184,7 @@ class Simulation extends GatlingSimulation {
 			check(	status.eq(201), 
 					regex("""virtualdatacenters/(\d+)/""") saveAs("vdcId"))
 		)
-		.exec(http("GET_Virtualdatacenters")
+		.exec(http("GET_Virtualdatacenter")
 		    get("/api/cloud/virtualdatacenters/${vdcId}")
 		    header("Accept", MT_VDC)
 		    check( status.eq(200),
@@ -200,7 +200,7 @@ class Simulation extends GatlingSimulation {
 			check(	status.eq(201), 
 					regex("""virtualappliances/(\d+)/""") saveAs("vappId"))						
 		)
-		.exec(http("GET_Virtualappliances")
+		.exec(http("GET_Virtualappliance")
 		    get("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}")
 		    header("Accept", MT_VAPP)
 		    check( status.eq(200),
@@ -217,7 +217,7 @@ class Simulation extends GatlingSimulation {
 			check(	status.eq(201), 
 					regex("""virtualmachines/(\d+)/""") saveAs("vmId"))
 		)
-		.exec(http("GET_Virtualmachines")
+		.exec(http("GET_Virtualmachine")
 		    get("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}")
 		    header("Accept", MT_VM)
 		    check( status.eq(200),
@@ -225,7 +225,7 @@ class Simulation extends GatlingSimulation {
 		    )		    
 		)
 		// VirtualmachineTask
-		.exec(http("GET_VirtualmachineTasks")
+		.exec(http("GET_VirtualmachineTask")
 			get("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}/tasks")
 			header("Accept", MT_TASKS)
 			check( status.eq(200) )
