@@ -18,7 +18,7 @@ Get the scripts into the *user-files* folder
     $ git clone git@github.com:abiquo/api-load-test
 
 Before running the test check it point to the correct api location
-	$ nanu simulations/abiquo-XXX@default.scala
+    $ nanu simulations/abiquo-XXX@default.scala
 
 	val urlBase = "http://localhost:80"
 
