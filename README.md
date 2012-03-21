@@ -17,12 +17,13 @@ Get the scripts into the *user-files* folder
     $ rm -rf *
     $ git clone git@github.com:abiquo/api-load-test
 
-Before running the test check it point to the correct api location
+Before running the test check it point to the correct api location  
+
     $ nanu simulations/abiquo-XXX@default.scala
 
-	val urlBase = "http://localhost:80"
+    val urlBase = "http://localhost:80"
 
-Gatling the api
+Gatling the api  
     $ ./bin/gatling.sh
 
 
