@@ -5,7 +5,7 @@ import java.util.UUID
 
 class Simulation extends GatlingSimulation {
   
-    val urlBase = "http://localhost:80"
+    val urlBase = "http://10.60.1.223:80"
 
     val MT_USER     = """application/vnd.abiquo.user+xml; version=2.0"""
     val MT_DCS      = """application/vnd.abiquo.datacenters+xml;version=2.0"""
@@ -34,6 +34,7 @@ class Simulation extends GatlingSimulation {
     val MT_ACCEPTED = """application/vnd.abiquo.acceptedrequest+xml; version=2.0"""
     val MT_TASKS    = """application/vnd.abiquo.tasks+xml;version=2.0"""
     val MT_TASK     = """application/vnd.abiquo.task+xml;version=2.0"""
+    val MT_VMTASK   = """application/vnd.abiquo.virtualmachinetask+xml"""
     val MT_VOLS     = """application/vnd.abiquo.iscsivolumes+xml; version=2.0"""
     val MT_VLAN     = """application/vnd.abiquo.vlan+xml; version=2.0"""      
     val MT_XML      = """application/xml"""
@@ -171,6 +172,16 @@ class Simulation extends GatlingSimulation {
         // get("/api/cloud/virtualdatacenters/4/privatenetworks/1") header("Accept", MT_VLAN)
         // get("/api/cloud/virtualdatacenters/4/virtualappliances/3/virtualmachines/1/storage/volumes") header("Accept", MT_VOLS)
 
+    val checkVmStateChain = chain
+        .exec(http("GET_VirtualmachineTask")
+            get("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}/tasks/${taskId}")
+            header("Accept", MT_TASK)
+            check(  status.eq(200),
+                    xpath("""/task/state""") saveAs("taskState") )
+
+        )
+        .pause(5)
+
     val writeChain = chain
         // Virtualdatacenter
         .exec(http("POST_Virtualdatacenter")
@@ -224,29 +235,35 @@ class Simulation extends GatlingSimulation {
                     regex("""virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}""") exists
             )           
         )
-        // VirtualmachineTask
-        .exec(http("GET_VirtualmachineTask")
-            get("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}/tasks")
-            header("Accept", MT_TASKS)
-            check( status.eq(200) )
-        )
         // Pricing      
         .exec(http("GET_VirtualappliancePrice")
             get("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/action/price")
             header("Accept",MT_PLAIN)
             check( status.eq(200) )
         )
-        //.insertChain(readChain)       
-        //.exec(http("deployVapp")
-        //    post("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/action/deploy")
-        //    header("Accept", MT_ACCEPTED) header("Content-Type", MT_TASK)
-        //    fileBody("vmtask.xml")
-        //)
-        //.exec(http("undeployVapp")
-        //   post("/api/cloud/virtualdatacenters/4/virtualappliances/3/action/undeploy")
-        //  header("Accept", MT_ACCEPTED) header("Content-Type", MT_TASK)
-        //  fileBody("vmtask.xml")
-        //)     
+        
+        // Deploy the Virtualmachine
+        .exec(http("deploy_Virtualmachine")
+            post("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}/action/deploy")
+            header("Accept", MT_ACCEPTED) //header("Content-Type", MT_TASK)
+            fileBody("vmtask.xml", Map("force"  -> "true"))
+            check( status.eq(202),
+                    regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskId") )
+        )
+        .loop(checkVmStateChain).asLongAs( (s: Session) => !s.getAttribute("taskState").asInstanceOf[String].startsWith("FINISHED") )    
+ 
+        .pause(60) // enjoy your vm during 1min 
+
+        .exec(http("undeploy_Virtualmachine")
+            post("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}/action/undeploy")
+            header("Accept", MT_ACCEPTED) header("Content-Type", MT_VMTASK)
+            fileBody("vmtask.xml", Map("force" -> "true"))
+            check(  status.eq(202) saveAs("taskState"), // taskState is finished, need to initialize again
+                    regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskId") )
+        )
+        .loop(checkVmStateChain).asLongAs( (s: Session) => !s.getAttribute("taskState").asInstanceOf[String].startsWith("FINISHED") )    
+        
+        // Delete all
         .exec(http("DEL_Virtualmachine")
             delete("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}")
             header("Accept", MT_XML)            
@@ -272,17 +289,17 @@ class Simulation extends GatlingSimulation {
         
     val read_scn = scenario("vdc_reads")
             .insertChain(loginAndGetDatacenterAndTemplateChain)
-            .loop(readChain).during(5, MINUTES)
+            .loop(readChain).during(10, MINUTES)
 
     val write_scn = scenario("vdc_writes")
             .insertChain(loginAndGetDatacenterAndTemplateChain)
             //.insertChain(writeChain)
-            .loop(writeChain).during(2, MINUTES) // times(2) 
+            .loop(writeChain).times(10) 
 
     
     runSimulation(
         init_scn.configure              users 1                 protocolConfig httpConfig.baseURL(urlBase),
         read_scn.configure  delay 60    users 50    ramp 60     protocolConfig httpConfig.baseURL(urlBase),     
-        write_scn.configure delay 160   users 50    ramp 60     protocolConfig httpConfig.baseURL(urlBase)
+        write_scn.configure delay 60    users 2     ramp 30     protocolConfig httpConfig.baseURL(urlBase)
         )
 }

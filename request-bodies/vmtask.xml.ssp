@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <virtualmachinetask>
-	<forceEnterpriseSoftLimits>false</forceEnterpriseSoftLimits>
-	<forceUndeploy>false</forceUndeploy>
+	<forceEnterpriseSoftLimits><%= force %></forceEnterpriseSoftLimits>
+	<forceUndeploy><%= force %></forceUndeploy>
 </virtualmachinetask>
