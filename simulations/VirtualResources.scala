@@ -5,46 +5,8 @@ import AbiMediaTypes._
 import AdminLogin._
 
 class VirtualResources extends Simulation {
-  
-    def apply = {
-
-        val urlBase = "http://10.60.1.223:80"
-        val httpConf = httpConfig.baseURL(urlBase)
-
-        List(
-        init_scn.configure              users 1                 protocolConfig httpConfig.baseURL(urlBase),
-        read_scn.configure  delay 60    users 50    ramp 60     protocolConfig httpConfig.baseURL(urlBase),     
-        write_scn.configure delay 60    users 15    ramp 60     protocolConfig httpConfig.baseURL(urlBase)
-        )
-    }
-
-     val init_scn = scenario("initInfrastructure")
-        .insertChain(loginChain)
-        .feed(csv("infrastructure.csv"))
-        .insertChain(initInfrastructureChain)
-        
-    val read_scn = scenario("vdc_reads")
-            .insertChain(loginAndGetDatacenterAndTemplateChain)
-            .loop(readChain).during(60, MINUTES)
-
-    val write_scn = scenario("vdc_writes")
-            .insertChain(loginAndGetDatacenterAndTemplateChain)
-            //.insertChain(writeChain)
-            .loop(writeChain).during(60,MINUTES)//.times(10) 
 
     
-      
-    //Loggin and sets $enterpriseId, $currentUserId
-    val loginChain = chain.exec(http("login")
-            get("/api/login")
-            header(ACCEPT, MT_USER)
-            basicAuth("admin", "xabiquo")
-            check(  status is(200),
-                    regex("""enterprises/(\d+)/users/""") saveAs("enterpriseId"),
-                    regex("""users/(\d+)""") saveAs("currentUserId") 
-            )
-        )
-
     //{pre: initInfrastructureChain} Loggin and sets $datacenterId and $templateId
     val loginAndGetDatacenterAndTemplateChain = chain
         .insertChain(loginChain)
@@ -240,10 +202,12 @@ class VirtualResources extends Simulation {
             post("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}/action/deploy")
             header(ACCEPT, MT_ACCEPTED) //header(CONTENT_TYPE, MT_TASK)
             fileBody("vmtask.xml", Map("force"  -> "true"))
-            check( status is(202) saveAs("taskState"), // taskState is finished, need to initialize again
-                    regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskId") )
+            check( status is(202), 
+                    regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskId"),
+                    // taskState is finished, need to initialize again
+                    regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskState"))
         )
-        .loop(checkVmStateChain).asLongAs( (s: Session) => !s.getAttribute("taskState").asInstanceOf[String].startsWith("FINISHED") )    
+        .loop(checkVmStateChain).asLongAs( (s: Session) => !s.getTypedAttribute[String]("taskState").startsWith("FINISHED") )    
  
         .pause(1,10) // enjoy your vm during 1min 
 
@@ -251,10 +215,12 @@ class VirtualResources extends Simulation {
             post("/api/cloud/virtualdatacenters/${vdcId}/virtualappliances/${vappId}/virtualmachines/${vmId}/action/undeploy")
             header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
             fileBody("vmtask.xml", Map("force" -> "true"))
-            check(  status is(202) saveAs("taskState"), // taskState is finished, need to initialize again
-                    regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskId") )
+            check(  status is(202),
+                    regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskId"),
+                    // taskState is finished, need to initialize again
+                    regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskState"))
         )
-        .loop(checkVmStateChain).asLongAs( (s: Session) => !s.getAttribute("taskState").asInstanceOf[String].startsWith("FINISHED") )    
+        .loop(checkVmStateChain).asLongAs( (s: Session) => !s.getTypedAttribute[String]("taskState").startsWith("FINISHED") )    
         
         // Delete all
         .exec(http("DEL_Virtualmachine")
@@ -274,4 +240,33 @@ class VirtualResources extends Simulation {
         )
         .pause(1,5) // wait before next loop
 
+
+
+    val init_scn = scenario("initInfrastructure")
+        .insertChain(loginChain)
+        .feed(csv("infrastructure.csv"))
+        .insertChain(initInfrastructureChain)
+        
+    val read_scn = scenario("vdc_reads")
+            .insertChain(loginAndGetDatacenterAndTemplateChain)
+            .loop(readChain) during(40, MINUTES)
+
+    val write_scn = scenario("vdc_writes")
+            .insertChain(loginAndGetDatacenterAndTemplateChain)
+            //.insertChain(writeChain)
+            .loop(writeChain) during(40,MINUTES)
+
+              
+    def apply = {
+
+        val urlBase = "http://10.60.1.223:80"
+        val httpConf = httpConfig.baseURL(urlBase)
+
+        List(
+        //init_scn.configure              users 1                 protocolConfig httpConfig.baseURL(urlBase),
+        read_scn.configure      users 10        ramp 60     protocolConfig httpConfig.baseURL(urlBase),     
+        write_scn.configure     users 3         ramp 60     protocolConfig httpConfig.baseURL(urlBase)
+        )
+    }
+ 
 }
