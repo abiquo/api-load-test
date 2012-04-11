@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.abiquo</groupId>
+    <artifactId>api-load-test</artifactId>
+    <version>0.0.3</version>
+
+    <properties>
+        <gatling.version>1.1.2</gatling.version>
+    </properties>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.excilys.ebi.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>${gatling.version}</version>
+                <configuration>
+                    <configFile>gatling.conf</configFile>
+                    
+                    <simulationsFolder>simulations</simulationsFolder>
+                    <requestBodiesFolder>request-bodies</requestBodiesFolder>
+                    <dataFolder>data</dataFolder>
+                    <includes>
+                        <include>**/*.scala</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*VirtualResources.scala</exclude>
+                    </excludes>
+                    <resultsFolder>target/gatling</resultsFolder>                    
+                </configuration>
+                <dependencies>
+  		    <dependency>
+		        <groupId>com.excilys.ebi.gatling.highcharts</groupId>
+		        <artifactId>gatling-charts-highcharts</artifactId>
+                        <version>${gatling.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
