@@ -21,7 +21,7 @@ Before running the test check it point to the correct api location
 
     $ nano simulations/xxx.scala
 
-```
+```scala
     val urlBase = "http://localhost:80"
 ```
 
