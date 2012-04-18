@@ -32,11 +32,7 @@ Gatling the api
 
 Running from Maven
 ------------------
-Install Gatling artifacts
-
-    $ git clone https://github.com/excilys/gatling.git && cd gatling && git co 1.1.2 && mvn clean install
-    $ cd ..
-    $ git clone https://github.com/excilys/gatling-highcharts.git && cd gatling-highcharts && git co 1.1.2 && mvn clean install
+You doesn't need gatling installed, it will be download as regular maven dependency
 
 Run using the __pom.xml__ configuration
 
