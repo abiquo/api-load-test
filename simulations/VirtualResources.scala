@@ -1,4 +1,5 @@
 import com.excilys.ebi.gatling.core.Predef._
+import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.Predef._
 
 import AbiMediaTypes._
@@ -253,8 +254,8 @@ class VirtualResources extends Simulation {
 
     val write_scn = scenario("vdc_writes")
             .insertChain(loginAndGetDatacenterAndTemplateChain)
-            //.insertChain(writeChain)
-            .loop(writeChain) during(40,MINUTES)
+            .insertChain(writeChain)
+            //.loop(writeChain) during(40,MINUTES)
 
               
     def apply = {
@@ -263,9 +264,9 @@ class VirtualResources extends Simulation {
         val httpConf = httpConfig.baseURL(urlBase)
 
         List(
-        //init_scn.configure              users 1                 protocolConfig httpConfig.baseURL(urlBase),
-        read_scn.configure      users 10        ramp 60     protocolConfig httpConfig.baseURL(urlBase),     
-        write_scn.configure     users 3         ramp 60     protocolConfig httpConfig.baseURL(urlBase)
+        init_scn.configure              users 1                 protocolConfig httpConfig.baseURL(urlBase),
+        //read_scn.configure      users 10        ramp 60     protocolConfig httpConfig.baseURL(urlBase),     
+        write_scn.configure     users 1              protocolConfig httpConfig.baseURL(urlBase)
         )
     }
  

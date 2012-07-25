@@ -1,4 +1,5 @@
 import com.excilys.ebi.gatling.core.Predef._
+import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.Predef._
 
 import AbiMediaTypes._
