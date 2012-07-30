@@ -26,7 +26,8 @@
                         <include>**/*.scala</include>
                     </includes>
                     <excludes>
-                        <exclude>**/*VirtualResources.scala</exclude>
+                        <exclude>**/*CrudUser.scala</exclude>
+                        <!-- exclude>**/*VirtualResources.scala</exclude-->
                     </excludes>
                     <resultsFolder>target/gatling</resultsFolder>                    
                 </configuration>

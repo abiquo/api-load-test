@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <virtualmachinewithnode>
-	<link href="http://localhost:8080/api/admin/enterprises/1/datacenterrepositories/2/virtualmachinetemplates/<%= templateId %>" rel="virtualmachinetemplate" />
+	<link href="http://localhost:8080/api/admin/enterprises/1/datacenterrepositories/1/virtualmachinetemplates/<%= templateId %>" rel="virtualmachinetemplate" />
 	<cpu>1</cpu>
 	<ram>128</ram>
 	<highDisponibility>0</highDisponibility>

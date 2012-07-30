@@ -3,7 +3,7 @@
 	<haEnabled>false</haEnabled>
 	<longDescription></longDescription>
 	<name><%= name %></name>
-	<nrsq>10</nrsq>
+	<nrsq>2</nrsq>
 	<shortDescription></shortDescription>
 	<vlanIdMax>4094</vlanIdMax>
 	<vlanIdMin>2</vlanIdMin>
