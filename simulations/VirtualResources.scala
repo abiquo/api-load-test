@@ -144,9 +144,9 @@ class VirtualResources extends Simulation {
         val httpConf = httpConfig.baseURL(urlBase)
 
         List(
-        setupInfrastructureScenario.configure   users 1                        protocolConfig httpConfig.baseURL(urlBase),
-        readVirtualResourcesScenario.configure  users 1         ramp 10        protocolConfig httpConfig.baseURL(urlBase),     
-        virtualResourcesScenario.configure      users 1         ramp 20        protocolConfig httpConfig.baseURL(urlBase)
+        setupInfrastructureScenario.configure   users 1             		           protocolConfig httpConfig.baseURL(urlBase),
+        //readVirtualResourcesScenario.configure  users 1		delay 60	ramp 10        protocolConfig httpConfig.baseURL(urlBase),     
+        virtualResourcesScenario.configure      users 1     delay 60    ramp 20        protocolConfig httpConfig.baseURL(urlBase)
         )
     }
  
