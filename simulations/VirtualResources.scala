@@ -1,138 +1,20 @@
 import com.excilys.ebi.gatling.core.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.Predef._
-
 import AbiMediaTypes._
 import AdminLogin._
+import SetupInfrastructure._
+import ReadVirtualResources._
+import com.excilys.ebi.gatling.http.check.HttpCheck
+import org.glassfish.grizzly.http.util.HttpStatus._
+import com.excilys.ebi.gatling.http.request.builder.AbstractHttpRequestWithBodyBuilder
+import jodd.util.StringUtil
 
 class VirtualResources extends Simulation {
 
-    
-    //{pre: initInfrastructureChain} Loggin and sets $datacenterId and $templateId
-    val loginAndGetDatacenterAndTemplateChain = chain
-        .insertChain(loginChain)
-        .exec(http("GET_Datacenters")
-            get("/api/admin/datacenters")
-            header(ACCEPT, MT_DCS)
-            check(  status is(200), regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId") )
-        )
-        .exec(http("GET_Templates")
-            get("/api/admin/enterprises/${enterpriseId}/datacenterrepositories/${datacenterId}/virtualmachinetemplates") queryParam("hypervisorTypeName", "VBOX")//${hypervisorType}")
-            header(ACCEPT, MT_VMTS)
-            check(  status is(200), regex("""virtualmachinetemplates/(\d+)""") find(0) saveAs("templateId") )
-        )
-        //.exec(
-        //    (s:Session) => println("________________________________________________________"+s.getAttribute("templateId"));
-        //    s
-        //)
-        
-
-
-    //Create a Datacenter a Rack a Machine and refresh the DatacenterRepository: sets $datacenterId, $rackId, $machineId, $templateId
-    val initInfrastructureChain = chain
-        // Datacenter
-        .exec(http("POST_Datacenter")
-            post("/api/admin/datacenters")
-            header(ACCEPT, MT_DC) header(CONTENT_TYPE, MT_DC)
-            fileBody("datacenter.xml",
-                Map("remoteservicesIp" -> "${remoteservicesIp}"))
-            check(  status is(201), regex("""datacenters/(\d+)" """) saveAs("datacenterId") )           
-        )
-        .exec(http("GET_Datacenters")
-            get("/api/admin/datacenters")
-            header(ACCEPT, MT_DCS)
-            check(  status is(200), regex("""datacenters/${datacenterId}""") exists )
-        )
-        // Rack
-        .exec(http("POST_Rack")
-            post("/api/admin/datacenters/${datacenterId}/racks")
-            header(ACCEPT, MT_RACK) header(CONTENT_TYPE, MT_RACK)
-            fileBody("rack.xml",
-                Map("name" -> "myrack"))
-            check(  status is(201), regex("""racks/(\d+)" """) saveAs("rackId") )
-        )
-        .exec(http("GET_Racks")
-            get("/api/admin/datacenters/${datacenterId}/racks")
-            header(ACCEPT, MT_RACKS)
-            check(  status is(200), regex("""racks/${rackId}""") exists  )
-        )
-        // Machine (do not use nodecollector) from feeder 'infrastructure.csv'
-        // get("/api/admin/datacenters/${datacenter}/action/hypervisor") queryParam("ip", "10.60.1.120")
-        // get("/api/admin/datacenters/2/action/discoversingle") queryParam("ip", "10.60.1.120") ....
-        .exec(http("POST_Machine")
-            post("/api/admin/datacenters/${datacenterId}/racks/${rackId}/machines")
-            header(ACCEPT, MT_MACHINE) header(CONTENT_TYPE, MT_MACHINE)
-            fileBody("machine.xml", Map(
-                "hypervisorIp"      -> "${hypervisorIp}", 
-                "hypervisorType"    -> "${hypervisorType}")
-            )
-            check(  status is(201), regex("""machines/(\d+)""") saveAs("machineId") )
-        )
-        .exec(http("GET_Machines")
-            get("/api/admin/datacenters/${datacenterId}/racks/${rackId}/machines")
-            header(ACCEPT, MT_MACHINES)
-            check(  status is(200), regex("""machines/${machineId}""") exists   )
-        )
-        // Refresh the DatacenterRespository
-        .exec(http("refreshDatacenterRepo")
-            get("/api/admin/enterprises/${enterpriseId}/datacenterrepositories/${datacenterId}") queryParam("refresh", "true") queryParam("usage", "true")
-            header(ACCEPT, MT_DC_REPO)
-            check(  status is(200)  )
-        )
-        .pause(5) // wait for AM notifications to populate the VirtualMachineTemplates
-        .exec(http("GET_Templates")
-            get("/api/admin/enterprises/${enterpriseId}/datacenterrepositories/${datacenterId}/virtualmachinetemplates") queryParam("hypervisorTypeName", "${hypervisorType}")
-            header(ACCEPT, MT_VMTS)
-            check(  status is(200), regex("""virtualmachinetemplates/(\d+)""") find(0) saveAs("templateId") )
-        )
-        .exec(http("GET_Template")
-            get("/api/admin/enterprises/${enterpriseId}/datacenterrepositories/${datacenterId}/virtualmachinetemplates/${templateId}")
-            header(ACCEPT, MT_VMT)
-            check(  status is(200), regex("""virtualmachinetemplates/${templateId}""") exists )
-        )
-
-    val readChain = chain
-        .exec(http("stadistics_cloudUsage")
-            get("/api/admin/statistics/cloudusage/actions/total")
-            header(ACCEPT, MT_CLOUDUSAGE)
-            check(status is(200))
-        )
-        .exec(http("stadistics_Enter")
-            get("/api/admin/statistics/enterpriseresources/${enterpriseId}")
-            header(ACCEPT, MT_RES_ENT)
-            check(status is(200))
-        )
-        .exec(http("stadistics_Vdc")
-            get("/api/admin/statistics/vdcsresources") queryParam("identerprise", "${enterpriseId}")
-            header(ACCEPT, MT_RES_VDC)
-            check(status is(200))
-        )
-        .exec(http("stadistics_Vapp")
-            get("/api/admin/statistics/vappsresources") queryParam("identerprise", "${enterpriseId}")
-            header(ACCEPT, MT_RES_VAPP)
-            check(status is(200))
-        )
-        // enterprise action links
-        .exec(http("GET_Virtualdatacenters_byEnter")
-            get("/api/admin/enterprises/${enterpriseId}/action/virtualdatacenters") queryParam("startwith", "0") queryParam("limit", "25") queryParam("by", "name") queryParam("asc", "true")
-            header(ACCEPT, MT_VDCS)
-            check(status is(200))
-        )
-        .exec(http("GET_Virtualappliances_byEnter")
-            get("/api/admin/enterprises/${enterpriseId}/action/virtualappliances") queryParam("startwith", "0") queryParam("limit", "25") queryParam("by", "name") queryParam("asc", "true")
-            header(ACCEPT, MT_VAPPS)
-            check(status is(200))
-        )
-        .exec(http("GET_Virtualmachines_byEnter")
-            get("/api/admin/enterprises/${enterpriseId}/action/virtualmachines") queryParam("startwith", "0") queryParam("limit", "25") queryParam("by", "name") queryParam("asc", "true")
-            header(ACCEPT, MT_VMS)
-            check(status is(200))
-        )
-        .pause(1,2) // wait before next loop
-        // get("/api/admin/enterprises/1/limits")
-        // get("/api/config/categories")
-        // get("/api/cloud/virtualdatacenters/4/privatenetworks/1") header(ACCEPT, MT_VLAN)
-        // get("/api/cloud/virtualdatacenters/4/virtualappliances/3/virtualmachines/1/storage/volumes") header(ACCEPT, MT_VOLS)
+	def sessionContainsTaskState(s:Session) = {
+        s.getTypedAttribute[String]("taskState").startsWith("PENDING") || s.getTypedAttribute[String]("taskState").startsWith("STARTED")     
+    }
 
     val checkVmStateChain = chain
         .exec(http("GET_VirtualmachineTask")
@@ -214,7 +96,7 @@ class VirtualResources extends Simulation {
                     // taskState is finished, need to initialize again
                     regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskState"))
         )
-        .loop(checkVmStateChain).asLongAs( (s: Session) => s.getTypedAttribute[String]("taskState").startsWith("PENDING") || s.getTypedAttribute[String]("taskState").startsWith("STARTED") )    
+        .loop(checkVmStateChain).asLongAs( (s:Session) => sessionContainsTaskState(s) )    
  
         .pause(60,600) // enjoy your vm during 1min 
 
@@ -227,7 +109,7 @@ class VirtualResources extends Simulation {
                     // taskState is finished, need to initialize again
                     regex("""/tasks/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})""") saveAs("taskState"))
         )
-        .loop(checkVmStateChain).asLongAs( (s: Session) => s.getTypedAttribute[String]("taskState").startsWith("PENDING") || s.getTypedAttribute[String]("taskState").startsWith("STARTED") )    
+        .loop(checkVmStateChain).asLongAs( (s:Session) => sessionContainsTaskState(s) )    
 
         .pause(60,600) 
 
@@ -250,20 +132,10 @@ class VirtualResources extends Simulation {
         .pause(300) // wait before next loop
 
 
-
-    val init_scn = scenario("initInfrastructure")
-        .insertChain(loginChain)
-        .feed(csv("infrastructure.csv"))
-        .insertChain(initInfrastructureChain)
-        
-    val read_scn = scenario("vdc_reads")
-            .insertChain(loginAndGetDatacenterAndTemplateChain)
-            .loop(readChain) during(5, MINUTES)
-
-    val write_scn = scenario("vdc_writes")
-            .insertChain(loginAndGetDatacenterAndTemplateChain)
-            //.insertChain(writeChain)
-            .loop(writeChain) during(12, HOURS)
+    val virtualResourcesScenario = scenario("vdc_writes")
+            .insertChain(loginAndGetDefaultDatacenterAndTemplateChain)
+            .insertChain(writeChain)
+            //.loop(writeChain) during(5, MINUTES)
 
               
     def apply = {
@@ -272,9 +144,9 @@ class VirtualResources extends Simulation {
         val httpConf = httpConfig.baseURL(urlBase)
 
         List(
-        //init_scn.configure              users 1                 protocolConfig httpConfig.baseURL(urlBase)
-        //read_scn.configure      users 100         ramp 100     protocolConfig httpConfig.baseURL(urlBase),     
-        write_scn.configure     users 100         ramp 600     protocolConfig httpConfig.baseURL(urlBase)
+        setupInfrastructureScenario.configure   users 1                        protocolConfig httpConfig.baseURL(urlBase),
+        readVirtualResourcesScenario.configure  users 1         ramp 10        protocolConfig httpConfig.baseURL(urlBase),     
+        virtualResourcesScenario.configure      users 1         ramp 20        protocolConfig httpConfig.baseURL(urlBase)
         )
     }
  

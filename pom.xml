@@ -23,12 +23,8 @@
                     <requestBodiesFolder>request-bodies</requestBodiesFolder>
                     <dataFolder>data</dataFolder>
                     <includes>
-                        <include>**/*.scala</include>
+                        <include>**/VirtualResources.scala</include>
                     </includes>
-                    <excludes>
-                        <exclude>**/*CrudUser.scala</exclude>
-                        <!-- exclude>**/*VirtualResources.scala</exclude-->
-                    </excludes>
                     <resultsFolder>target/gatling</resultsFolder>                    
                 </configuration>
                 <dependencies>

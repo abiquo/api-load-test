@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <machine>
 
-    <description>mymachine</description>
+    <description>thisisamokmachine</description>
     <name>mymachine</name>
 
     <ip><%= hypervisorIp %></ip>
@@ -14,18 +14,12 @@
     
     <state>MANAGED</state>
     
-    <cpu>2</cpu>
+    <cpu>512</cpu>
+    <ram>10000000000</ram>
     <cpuUsed>0</cpuUsed>
-    <ram>6138</ram>
     <ramUsed>0</ramUsed>
-
-    <virtualSwitch>vSwitch0</virtualSwitch>
-    <initiatorIQN>iqn.1998-01.com.vmware:localhost-2520c1b4</initiatorIQN>
-    
-    <ipmiIP></ipmiIP>
-    <ipmiPassword></ipmiPassword>
-    <ipmiPort>0</ipmiPort>
-    <ipmiUser></ipmiUser>
+    <virtualSwitch>eth0</virtualSwitch>
+    <initiatorIQN>iqn.1998-01.com.box:localhost-2520c1b4</initiatorIQN>
     
     <datastores>
         <datastore>
@@ -33,10 +27,10 @@
             <directory></directory>
             <enabled>true</enabled>
             <id>0</id>
-            <name>datastore1 (1)</name>
-            <rootPath>datastore1 (1)</rootPath>
+            <name>local</name>
+            <rootPath>/</rootPath>
             <size>244544700416</size>
-            <usedSize>20713570304</usedSize>
+            <usedSize>0</usedSize>
         </datastore>
     </datastores>
 
