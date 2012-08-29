@@ -18,6 +18,7 @@ object AbiMediaTypes {
     val MT_VDC      = """application/vnd.abiquo.virtualdatacenter+xml""" + ABQ_VERSION
     val MT_VAPPS    = """application/vnd.abiquo.virtualappliances+xml""" + ABQ_VERSION
     val MT_VAPP     = """application/vnd.abiquo.virtualappliance+xml""" + ABQ_VERSION
+    val MT_VAPP_STATE   = """application/vnd.abiquo.virtualappliancestate+xml""" + ABQ_VERSION
     val MT_VMS_EXTENDED = """application/vnd.abiquo.virtualmachineswithnodeextended+xml""" + ABQ_VERSION
     val MT_VM_EXTENDED  = """application/vnd.abiquo.virtualmachinewithnodeextended+xml""" + ABQ_VERSION
     val MT_VM_NODE  = """application/vnd.abiquo.virtualmachinewithnode+xml""" + ABQ_VERSION

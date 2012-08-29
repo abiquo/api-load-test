@@ -1,0 +1,2 @@
+loginuser,loginpassword,datacenterId,templateId,virtualdatacenterId,numVirtualMachinesInVapp
+admin,xabiquo,1,2,1,3

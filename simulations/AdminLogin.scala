@@ -12,17 +12,22 @@ object AdminLogin{
     def captureEnterpriseId = regex("""enterprises/(\d+)/users/""") saveAs("enterpriseId")
     def captureUserId       = regex("""users/(\d+)""") saveAs("currentUserId") 
     
-    def printSession(s:Session) = {
-        println("will use templateId + "+s.getAttribute("templateId")); 
+    def printSession(s:Session) = {        
+        println("----- printSession -----")
+        //for(sKey : String <- s.data.keys)        
+        //{
+        //    println(sKey + " - " + s.getAttribute(sKey))
+        //}
         s
     }
     
-    def exitIfNoDefined(s:Session, paramname:String)={
-      val sessionparam = s.getAttribute(paramname)
-      println("**************" + paramname + " : "+ sessionparam)
-      if(sessionparam == null){
-        exit(0);
-      }
+    def exitIfNoDefined(s:Session, paramname:String)={         
+        if(!s.isAttributeDefined(paramname))
+        {
+            println("FATAL ''" + paramname + "'' not set in session, check capture methods")
+            printSession(s)
+            exit(0);
+        }
         true
     }
 
@@ -31,8 +36,8 @@ object AdminLogin{
         http("getlogin")
         get("/api/login")
         header(ACCEPT, MT_USER)
-        basicAuth("admin", "xabiquo")           
-        check(status is 200, captureEnterpriseId, captureUserId )           
+        basicAuth("${loginuser}","${loginpassword}")
+        check(status is 200, captureEnterpriseId, captureUserId )
     )
 
     //{pre: initInfrastructureChain} Loggin and sets $datacenterId and $templateId
