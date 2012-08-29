@@ -14,8 +14,9 @@ class VirtualResources extends Simulation {
 
     val checkPollingPause = 5
 
-	def isVirtualApplianceDeployed(s:Session) = {
-        ! s.getTypedAttribute[String]("virtualApplianceState").startsWith("NOT_DEPLOYED")
+	def isVirtualApplianceState(s:Session, state:String) = {
+        println("\n waiting for " +  state + " -- " + s.getTypedAttribute[String]("virtualApplianceState")+"\n")
+        s.getTypedAttribute[String]("virtualApplianceState").startsWith(state)
     }
 
     val checkVirtualApplianceState = chain
@@ -58,7 +59,7 @@ class VirtualResources extends Simulation {
             check( status is(202) )
         )
         .insertChain(checkVirtualApplianceState) // clear virtualMachineState from prev iterations
-        .loop(checkVirtualApplianceState).asLongAs( (s:Session) => !isVirtualApplianceDeployed(s) )
+        .loop(checkVirtualApplianceState).asLongAs( (s:Session) => !isVirtualApplianceState(s, "DEPLOYED") )
  
         .pause(10,30) // enjoy your virtualappliance
 
@@ -69,7 +70,7 @@ class VirtualResources extends Simulation {
             check( status is(202) )
         )
         .insertChain(checkVirtualApplianceState) // clear virtualMachineState from prev iterations
-        .loop(checkVirtualApplianceState).asLongAs( (s:Session) => isVirtualApplianceDeployed(s) )
+        .loop(checkVirtualApplianceState).asLongAs( (s:Session) => !isVirtualApplianceState(s, "NOT_DEPLOYED") )
 
         .exec(http("DEL_Virtualappliance")
             delete("/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}")
@@ -92,7 +93,7 @@ class VirtualResources extends Simulation {
         val httpConf = httpConfig.baseURL(urlBase)
 
         List(
-        virtualResourcesScenario.configure    users 30 ramp 60   protocolConfig httpConfig.baseURL(urlBase)
+        virtualResourcesScenario.configure    users 10 ramp 60 protocolConfig httpConfig.baseURL(urlBase)
         )
     }
 }
