@@ -18,19 +18,26 @@
                 <version>${gatling.version}</version>
                 <configuration>
                     <configFile>gatling.conf</configFile>
-                    
+                    <resultsFolder>results</resultsFolder>                    
                     <simulationsFolder>simulations</simulationsFolder>
                     <requestBodiesFolder>request-bodies</requestBodiesFolder>
                     <dataFolder>data</dataFolder>
                     <includes>
-                        <include>**/VirtualResources.scala</include>
+                        <include>**/*.scala</include>
                     </includes>
-                    <resultsFolder>target/gatling</resultsFolder>                    
+                    <!-- <simulations>VirtualResources</simulations> -->
+                    <jvmArgs>
+                        <jvmArg>-DbaseUrl=${baseUrl}</jvmArg>
+                        <jvmArg>-DnumUsers=${numUsers}</jvmArg>
+                        <jvmArg>-DrampTime=${rampTime}</jvmArg>
+                        <jvmArg>-DuserLoop=${userLoop}</jvmArg>
+                    </jvmArgs>
                 </configuration>
+
                 <dependencies>
-  		    <dependency>
-		        <groupId>com.excilys.ebi.gatling.highcharts</groupId>
-		        <artifactId>gatling-charts-highcharts</artifactId>
+  		            <dependency>
+                        <groupId>com.excilys.ebi.gatling.highcharts</groupId>
+                        <artifactId>gatling-charts-highcharts</artifactId>
                         <version>${gatling.version}</version>
                     </dependency>
                 </dependencies>

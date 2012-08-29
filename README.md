@@ -38,6 +38,9 @@ Run using the __pom.xml__ configuration
 
     $ mvn gatling:execute
 
+````
+mvn gatling:execute -Dgatling.simulations=VirtualResources -DbaseUrl=http://10.60.1.223:80 -DnumUsers=10 -DrampTime=30 -DuserLoop=5 
+```
 
 
 User simulation

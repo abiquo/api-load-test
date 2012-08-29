@@ -7,12 +7,32 @@
 
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%d{HH:mm:ss.SSS} [%thread{10}][%-5level] %logger{15} - %msg%n%rEx</pattern>
+			<pattern>%msg%n%rEx</pattern>
+			<immediateFlush>false</immediateFlush>
 		</encoder>
 	</appender>
 
+	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>abiquo.log</file>
+		<append>true</append>
+		<encoder>
+			<pattern>%msg%n%rEx</pattern>
+			<immediateFlush>true</immediateFlush>
+		</encoder>
+    </appender>
+
+	<!-- Uncomment for logging HTTP requests and responses on failure -->
+	<!-- <logger name="com.excilys.ebi.gatling.http.ahc.GatlingAsyncHandlerActor" level="DEBUG" /> -->
+	<logger name="abiquo">
+		<level value="ERROR" />
+		<appender-ref ref="FILE" />
+	</logger>
+	<logger name="abiquo">
+		<level value="WARN" />
+	</logger>
+
 	<root>
-		<level value="INFO" />
+		<level value="WARN" />
 		<appender-ref ref="CONSOLE" />
 	</root>
 
