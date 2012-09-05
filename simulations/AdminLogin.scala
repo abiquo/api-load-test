@@ -1,16 +1,15 @@
 import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.core.Predef._
-
 import AbiquoAPI._
 
 object AdminLogin{
 
-	def captureDatacenterId = regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId") 
+	def captureDatacenterId = regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId")
 	def captureTemplateId   = regex("""virtualmachinetemplates/(\d+)""") find(0) saveAs("templateId")
 	def captureEnterpriseId = regex("""enterprises/(\d+)/users/""") saveAs("enterpriseId")
-	def captureUserId       = regex("""users/(\d+)""") saveAs("currentUserId") 
-	
+	def captureUserId       = regex("""users/(\d+)""") saveAs("currentUserId")
+
 	def exitIfNoDefined(s:Session, paramname:String) = {
 		if(!s.isAttributeDefined(paramname)) {
 			println("FATAL ''" + paramname + "'' not set in session, check capture methods")

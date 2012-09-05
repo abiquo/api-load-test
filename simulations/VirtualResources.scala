@@ -19,7 +19,7 @@ class VirtualResources extends Simulation {
     val rampTime = Integer.getInteger("rampTime", 1)
     val userLoop = Integer.getInteger("userLoop", 1)
     val checkPollingPause = 5
-    
+
     // end configure
 
     val createVapp = chain.exec(http("POST_VAPP")
@@ -27,17 +27,17 @@ class VirtualResources extends Simulation {
             fileBody("vapp.xml", vappContent)
             check( status is(CREATED), captureErrors("POST_VAPP"), captureVirtualapplianceId)
         )
-        //.doIf( (s:Session) => exitIfNoDefined(s, "virtualapplianceId"), chain.pause(0,1)) 
-    
+        //.doIf( (s:Session) => exitIfNoDefined(s, "virtualapplianceId"), chain.pause(0,1))
+
     val deleteVapp = chain.exec(http("DEL_VAPP")
-            delete(DEL_VAPP) header(ACCEPT, MT_XML)            
-            check( status is(NO_CONTENT) ) 
+            delete(DEL_VAPP) header(ACCEPT, MT_XML)
+            check( status is(NO_CONTENT) )
             //captureErrors("DEL_VAPP") SAXParseException: Premature end of file.
         )
 
     val updateVmState = chain.exec(http("GET_VM_STATE")
             get(GET_VM_STATE) header(ACCEPT, MT_VMSTATE)
-            check( status is(OK), captureCurrentVmState )   
+            check( status is(OK), captureCurrentVmState )
         )
 
     val undeployVm = chain.exec(http("ACTION_VM_UNDEPLOY")
@@ -48,7 +48,7 @@ class VirtualResources extends Simulation {
         // don't wait (undeplyVapp)
 
     val deleteVm = chain.exec(http("DEL_VM")
-            delete(DEL_VM) 
+            delete(DEL_VM)
             check( status is(NO_CONTENT) )
         )
 
@@ -70,7 +70,7 @@ class VirtualResources extends Simulation {
         .insertChain(updateVmState)
         .doIf( (s:Session) => isCurrentVirtualMachineState(s, Set("UNKNOWN", "NOT_ALLOCATED")),
             chain.exec( (s:Session) => actionRetry("unknownUndeploy", s))
-            .insertChain(deleteVm)   
+            .insertChain(deleteVm)
         )
 
     val checkCurrentVmNeedDeploy = chain
@@ -105,7 +105,7 @@ class VirtualResources extends Simulation {
         .loop(
             chain.pause(1) // before create
             .insertChain(createVm)
-            .exec( (s:Session) => actionRetry("createVm", s))        
+            .exec( (s:Session) => actionRetry("createVm", s))
         ).asLongAs( (s:Session) => needCreateVirtualMachineRetry(s) )
 
     val updateVappState = chain.exec(http("GET_VAPP_STATE")
@@ -165,14 +165,14 @@ class VirtualResources extends Simulation {
                 chain.insertChain(undeployAllVms)
                 .insertChain(updateVappState)
             )
-            .exec( (s:Session) => logVirtualApplianceState("uCheck",s) )                        
+            .exec( (s:Session) => logVirtualApplianceState("uCheck",s) )
         ).asLongAs((s:Session) => !isVirtualApplianceState(s, Set("NOT_DEPLOYED", "NOT_ALLOCATED"))) //, "UNKNOWN"
         .exec( (s:Session) => undeployStopTime(s) )
         .exec( (s:Session) => logVirtualApplianceState("uEnd",s) )
 
     val deployVirtualApplianceChain = chain
-        .insertChain(loginChain)            
-        .insertChain(createVapp)        
+        .insertChain(loginChain)
+        .insertChain(createVapp)
         .loop(
             chain.insertChain(createVmWithRetry)
             .pause(0, 5) // slow down create vm conflicts
@@ -181,18 +181,18 @@ class VirtualResources extends Simulation {
         .insertChain(deployVappHard)
         .pause(1, 30)
         .insertChain(undeployVappHard)
-        .insertChain(deleteVapp)        
+        .insertChain(deleteVapp)
         .exec( (s:Session) => reportUserLoop(s) )
         .pause(0, 5) // wait before next loop in deployVirtualApplianceChain
 
 
     val virtualResourcesScenario = scenario("deployVirtualAppliance")
             .feed(csv("virtualdatacenter.csv").circular)
-            .loop(deployVirtualApplianceChain) times(userLoop) 
+            .loop(deployVirtualApplianceChain) times(userLoop)
 
-    def apply = {                
+    def apply = {
         val httpConf = httpConfig.baseURL(baseUrl).disableAutomaticReferer
- 
+
         List(
             virtualResourcesScenario.configure    users(numUsers)    ramp(rampTime)    protocolConfig    httpConfig.baseURL(baseUrl)
         )

@@ -6,14 +6,13 @@ import AdminLogin._
 import com.excilys.ebi.gatling.http.check.HttpCheck
 import org.glassfish.grizzly.http.util.HttpStatus._
 import com.excilys.ebi.gatling.http.request.builder.AbstractHttpRequestWithBodyBuilder
-import jodd.util.StringUtil
 
 object SetupInfrastructure extends Simulation {
 
-	def captureDatacenterId = regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId") 
+	def captureDatacenterId = regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId")
 	def captureRackId       = regex("""racks/(\d+)""") find(0) saveAs("rackId")
 	def captureMachineId    = regex("""machines/(\d+)""") find(0) saveAs("machineId")
-	
+
 	//Create a Datacenter a Rack a Machine and refresh the DatacenterRepository: sets $datacenterId, $rackId, $machineId, $templateId
 	val setupInfrastructureChain = chain
 		// Datacenter
@@ -22,10 +21,10 @@ object SetupInfrastructure extends Simulation {
 			header(ACCEPT, MT_DC) header(CONTENT_TYPE, MT_DC)
 			fileBody("datacenter.xml",
 				Map("remoteservicesIp" -> "${remoteservicesIp}"))
-			check(  status is(201), captureDatacenterId)       
+			check(  status is(201), captureDatacenterId)
 		)
 		.doIf( (s:Session) => exitIfNoDefined(s, "datacenterId"), chain.pause(1))
-		
+
 		// Rack
 		.exec(http("POST_Rack")
 			post("/api/admin/datacenters/${datacenterId}/racks")
@@ -43,7 +42,7 @@ object SetupInfrastructure extends Simulation {
 			post("/api/admin/datacenters/${datacenterId}/racks/${rackId}/machines")
 			header(ACCEPT, MT_MACHINE) header(CONTENT_TYPE, MT_MACHINE)
 			fileBody("machine.xml", Map(
-				"hypervisorIp"      -> "${hypervisorIp}", 
+				"hypervisorIp"      -> "${hypervisorIp}",
 				"hypervisorType"    -> "${hypervisorType}")
 			)
 			check(  status is(201), captureMachineId )
@@ -64,8 +63,8 @@ object SetupInfrastructure extends Simulation {
 		.insertChain(loginChain)
 		.feed(csv("infrastructure.csv"))
 		.insertChain(setupInfrastructureChain)
-		
-			  
+
+
 	def apply = {
 
 		val urlBase = "http://10.60.1.223:80"
@@ -73,5 +72,5 @@ object SetupInfrastructure extends Simulation {
 
 		List( setupInfrastructureScenario.configure users 1 protocolConfig httpConfig.baseURL(urlBase) )
 	}
- 
+
 }

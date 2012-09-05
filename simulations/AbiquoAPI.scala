@@ -6,10 +6,9 @@ import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.core.session.Session
 
-
 object AbiquoAPI {
 	val ABQ_VERSION = """;""" // version=2.2 """
-	  
+
 	val MT_USER     = """application/vnd.abiquo.user+xml""" + ABQ_VERSION
 	val MT_USERS    = """application/vnd.abiquo.users+xml""" + ABQ_VERSION
 	val MT_DCS      = """application/vnd.abiquo.datacenters+xml""" + ABQ_VERSION
@@ -40,7 +39,7 @@ object AbiquoAPI {
 	val MT_TASKS    = """application/vnd.abiquo.tasks+xml""" + ABQ_VERSION
 	val MT_TASK     = """application/vnd.abiquo.task+xml""" + ABQ_VERSION
 	val MT_VOLS     = """application/vnd.abiquo.iscsivolumes+xml""" + ABQ_VERSION
-	val MT_VLAN     = """application/vnd.abiquo.vlan+xml""" + ABQ_VERSION      
+	val MT_VLAN     = """application/vnd.abiquo.vlan+xml""" + ABQ_VERSION
 	val MT_VMTASK   = """application/vnd.abiquo.virtualmachinetask+xml"""+ ABQ_VERSION
 	val MT_XML      = """application/xml"""
 	val MT_PLAIN    = """text/plain"""
@@ -63,12 +62,12 @@ object AbiquoAPI {
 	val ACTION_VM_UNDEPLOY  = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/action/undeploy"
 	val DEL_VM 				= "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}"
 
-    def captureErrors(exec:String)  = xpath("""/errors/error/code""").findAll.notExists.saveAs("error-"+exec)
-    def captureVirtualapplianceState= xpath("""/virtualApplianceState/power""").find.exists.saveAs("virtualApplianceState")
-    def captureCurrentVmState		= xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")    
+    def captureErrors(exec:String)     = xpath("""/errors/error/code""").findAll.notExists.saveAs("error-"+exec)
+    def captureVirtualapplianceState   = xpath("""/virtualApplianceState/power""").find.exists.saveAs("virtualApplianceState")
+    def captureCurrentVmState		   = xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")
     def captureVirtualapplianceId      = regex("""virtualappliances/(\d+)/""").find.exists.saveAs("virtualapplianceId")
-    def captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("virtualmachineId") 
-	
+    def captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("virtualmachineId")
+
 	def vmtaskContent   = Map(  "force" -> "true")
 	def vappContent     = Map(	"name" -> "myVirtualappliance")
 	def vmContent       = Map(  "name"          -> "myVirtualmachine",
@@ -76,7 +75,7 @@ object AbiquoAPI {
 								"templateId"    -> "${templateId}")
 
 	def vmIdByCounter(s:Session) 			   = { "virtualmachineId-" + s.getCounterValue("numVirtualmachine") }
-	def saveCurrentVirtualmachineId(s:Session) = { 
+	def saveCurrentVirtualmachineId(s:Session) = {
 		if(s.isAttributeDefined("virtualmachineId"))
 		{
 			s.setAttribute(vmIdByCounter(s),
@@ -86,7 +85,7 @@ object AbiquoAPI {
 	def setCurrentVmId(s:Session) 			= { s.setAttribute("currentVmId", s.getTypedAttribute[String](vmIdByCounter(s)) ) }
 	def clearCurrentVmCreation(s:Session)  	= { s.removeAttribute("currentVmCreated") }
 	def clearCurrentVmState(s:Session)		= { s.removeAttribute("currentVmState") }
-	
+
 	def actionRetry(action:String, s:Session) = {
 		val a = action + "Retry"
 		if(s.isAttributeDefined(a)) { s.setAttribute(a, s.getTypedAttribute[Long](a) + 1) }
@@ -110,10 +109,10 @@ object AbiquoAPI {
 					getUndeployVmRetry(s).asInstanceOf[java.lang.Long],
 					getUnknownUndeployRetry(s).asInstanceOf[java.lang.Long],
 					getUnknownDeployRetry(s).asInstanceOf[java.lang.Long],
-					(s.getTypedAttribute[Long]("deployStopTime") - s.getTypedAttribute[Long]("deployStartTime")).asInstanceOf[java.lang.Long],					
+					(s.getTypedAttribute[Long]("deployStopTime") - s.getTypedAttribute[Long]("deployStartTime")).asInstanceOf[java.lang.Long],
 					(s.getTypedAttribute[Long]("undeployStopTime") - s.getTypedAttribute[Long]("undeployStartTime")).asInstanceOf[java.lang.Long]
 					)
-			)			
+			)
 		LOG.trace("{}",s);
 
 		s.removeAttribute("virtualApplianceState")
@@ -139,9 +138,9 @@ object AbiquoAPI {
 	}
 
 	def logVirtualApplianceState(msg:String, s:Session) = {
-		if(s.isAttributeDefined("virtualApplianceState") && 
+		if(s.isAttributeDefined("virtualApplianceState") &&
 			!s.getTypedAttribute[String]("virtualApplianceState").startsWith("LOCKED")) {
-			LOG.warn(msg + "\tvapp {}\t{}", 
+			LOG.warn(msg + "\tvapp {}\t{}",
 			s.getTypedAttribute[String]("virtualapplianceId"),
 			s.getTypedAttribute[String]("virtualApplianceState"));
 		}; s
