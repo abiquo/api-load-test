@@ -12,7 +12,7 @@
 		</encoder>
 	</appender>
 
-	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+	<appender name="REPO-FILE" class="ch.qos.logback.core.FileAppender">
         <file>abiquo.log</file>
 		<append>true</append>
 		<encoder>
@@ -21,16 +21,13 @@
 		</encoder>
     </appender>
 
+	<logger name="repo">
+		<level value="INFO" />
+		<appender-ref ref="REPO-FILE" />
+	</logger>
+	<logger name="abiquo" level="DEBUG" />
 	<!-- Uncomment for logging HTTP requests and responses on failure -->
 	<!-- <logger name="com.excilys.ebi.gatling.http.ahc.GatlingAsyncHandlerActor" level="DEBUG" /> -->
-	<logger name="abiquo">
-		<level value="ERROR" />
-		<appender-ref ref="FILE" />
-	</logger>
-	<logger name="abiquo">
-		<level value="WARN" />
-	</logger>
-
 	<root>
 		<level value="WARN" />
 		<appender-ref ref="CONSOLE" />

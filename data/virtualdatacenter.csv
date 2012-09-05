@@ -1,6 +1,6 @@
-loginuser,loginpassword,datacenterId,templateId,virtualdatacenterId,numVirtualMachinesInVapp,deployDuration
-admin,xabiquo,1,2,1,3,60
-admin,xabiquo,1,2,2,3,60
-admin,xabiquo,1,2,3,3,60
-admin,xabiquo,1,2,4,3,60
-admin,xabiquo,1,2,5,3,60
+loginuser,loginpassword,datacenterId,templateId,virtualdatacenterId,numVirtualMachinesInVapp
+admin,xabiquo,1,2,1,3
+admin,xabiquo,1,2,2,3
+admin,xabiquo,1,2,3,3
+admin,xabiquo,1,2,4,3
+admin,xabiquo,1,2,5,3

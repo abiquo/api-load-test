@@ -69,7 +69,7 @@ class VirtualResources extends Simulation {
         .pause(1)
         .insertChain(updateVmState)
         .doIf( (s:Session) => isCurrentVirtualMachineState(s, Set("UNKNOWN", "NOT_ALLOCATED")),
-            chain.exec( (s:Session) => actionRetry("unknownUndeploy", s))
+            chain.exec( (s:Session) => actionRetry("delVmUndeploy", s))
             .insertChain(deleteVm)
         )
 
@@ -120,26 +120,26 @@ class VirtualResources extends Simulation {
         )
 
     val deployVappHard = chain
+        .exec( (s:Session) =>  deployStartTime(s))
         .exec( (s:Session) => s.removeAttribute("acceptedDeply"))
         .loop(
             chain.pause(0, 3)
             .exec( (s:Session) => actionRetry("deploy", s) )
             .insertChain(deployVapp)
         ).asLongAs( (s:Session) => needAcceptedDeplyRetry(s))
-        .exec( (s:Session) =>  deployStartTime(s))
         .insertChain(updateVappState)
         .loop(
             chain.pause(checkPollingPause)
-            .exec( (s:Session) => actionRetry("deploy", s))
             .insertChain(updateVappState)
             .doIf( (s:Session) => isVirtualApplianceState(s, Set("NEEDS_SYNC", "UNKNOWN")),
-                chain.insertChain(deployAllVms)
+                chain.exec( (s:Session) => actionRetry("deploy", s))
+                .exec( (s:Session) => logVirtualApplianceState("check-D",s) )
+                .insertChain(deployAllVms)
                 .insertChain(updateVappState)
             )
-            .exec( (s:Session) => logVirtualApplianceState("dCheck",s) )
         ).asLongAs((s:Session) => !isVirtualApplianceState(s, Set("DEPLOYED"))) //, "UNKNOWN"
         .exec( (s:Session) => deployStopTime(s) )
-        .exec( (s:Session) => logVirtualApplianceState("dEnd",s) )
+        .exec( (s:Session) => logVirtualApplianceState("deploy",s) )
 
     val undeployVapp = chain.exec(http("ACTION_VAPP_UNDEPLOY")
             post(ACTION_VAPP_UNDEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
@@ -148,6 +148,7 @@ class VirtualResources extends Simulation {
         )
 
     val undeployVappHard = chain
+        .exec( (s:Session) =>  undeployStartTime(s))
         .exec( (s:Session) => s.removeAttribute("acceptedUndeply"))
         .loop(
             chain.pause(0, 3)
@@ -155,20 +156,19 @@ class VirtualResources extends Simulation {
             .insertChain(undeployVapp)
 
         ).asLongAs( (s:Session) => needAcceptedUndeplyRetry(s))
-        .exec( (s:Session) =>  undeployStartTime(s))
         .insertChain(updateVappState)
         .loop(
             chain.pause(checkPollingPause)
-            .exec( (s:Session) => actionRetry("undeploy", s))
             .insertChain(updateVappState)
             .doIf( (s:Session) => isVirtualApplianceState(s, Set("NEEDS_SYNC", "UNKNOWN", "DEPLOYED")),
-                chain.insertChain(undeployAllVms)
+                chain.exec( (s:Session) => actionRetry("undeploy", s))
+                .exec( (s:Session) => logVirtualApplianceState("check-U",s) )
+                .insertChain(undeployAllVms)
                 .insertChain(updateVappState)
             )
-            .exec( (s:Session) => logVirtualApplianceState("uCheck",s) )
         ).asLongAs((s:Session) => !isVirtualApplianceState(s, Set("NOT_DEPLOYED", "NOT_ALLOCATED"))) //, "UNKNOWN"
         .exec( (s:Session) => undeployStopTime(s) )
-        .exec( (s:Session) => logVirtualApplianceState("uEnd",s) )
+        .exec( (s:Session) => logVirtualApplianceState("undeploy",s) )
 
     val deployVirtualApplianceChain = chain
         .insertChain(loginChain)

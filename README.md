@@ -3,89 +3,58 @@ Abiquo API load test
 
 This repo contains [Gatling scripts](https://github.com/excilys/gatling) to test the [Abiquo API](http://community.abiquo.com/display/ABI20/API+Reference)
 
-Getting started
----------------
-
-Install Gatling
-
-    $ wget https://github.com/downloads/excilys/gatling/gatling-charts-highcharts-1.1.2-bundle.tar.gz
-    $ tar xvf gatling-charts-highcharts-1.1.2-bundle.tar.gz
-
-Get the scripts into the *user-files* folder
-
-	$ rm -r gatling-charts-highcharts-1.1.2-bundle/user-files
-    $ git clone git@github.com:abiquo/api-load-test
-    $ ln -s api-load-test user-files
-
-Before running the test check it point to the correct api location  
-
-    $ nano simulations/xxx.scala
-
-```scala
-    val urlBase = "http://localhost:80"
-```
-
-Gatling the api  
-
-    $ ./bin/gatling.sh
-
-
-Running from Maven
+Run using Maven
 ------------------
-You doesn't need gatling installed, it will be download as regular maven dependency
 
-Run using the __pom.xml__ configuration
-
-    $ mvn gatling:execute
+Run using the __pom.xml__ project
 
 ````
-mvn gatling:execute -Dgatling.simulations=VirtualResources -DbaseUrl=http://10.60.1.223:80 -DnumUsers=10 -DrampTime=30 -DuserLoop=5 
-```
+$ mvn gatling:execute -Dgatling.simulations=VirtualResources -DbaseUrl=http://10.60.1.223:80 -DnumUsers=10 -DrampTime=30 -DuserLoop=5
+````
+
+* *baseUrl* abiquo api location
+* *numUsers* total users to simulate
+* *rampTime* in seconds, at this time all the _numUsers_ will be running
+* *userLoop* iteration for each user
+
+See _gatling.conf_ for timeout (simulation/request) configuration, by default max simulation time is 2hours and request timeout to 1.6 minutes (!!!). Also check _logback.xml_ to log failed responses.
 
 
-User simulation
----------------
+VirtualResources
+----------------
 
-__CrudUser.scala__ : Basic users CRUD operations, composed by 
+Each user deploy and undeploys a virtual appliance, if it fails repeat until success
 
-* ''read'' chain 
+Configuration
+-------------
 
-Login and get all the users
+_data/virtualdatacenter.csv_
 
-* ''write'' chain
+Users are configured reading a line of this file sequentially and circular
 
-Login, create a new user, check the user can be retrieved, modify it and finally delete
+* loginuser
+* loginpassword
+* datacenterId
+* templateId
+* virtualdatacenterId
+* numVirtualMachinesInVapp
 
-By default each chain is executed during 5minutes
-
-To modify the number of users look at the bottom of _simulations/CrudUser.scala_ file
-
-    runSimulation(
-        write_scn.configure users 100 	ramp 100 protocolConfig httpConfig.baseURL(urlBase),
-        read_sn.configure 	users 100 	ramp 100 protocolConfig httpConfig.baseURL(urlBase)
-    )
-
-use the _ramp_ to control the user frequence (100 users with ramp 100 mean 1 new session each second)
+Check this configuration is OK in the abiquo API before running the simulation. (note: it is important to check _templateId_ is a *compatible* format in the virtual datacenter)
 
 
-Virtual simulation
-------------------
+Output
+------
+* _results/run..._ gatling reports
+* _abiquo.log_ abiquo deploy specific
 
-__VirtualResources.scala__ : In order to create virtual datacenters you need to configure a datacenter and a hypervisor, edit _data/infrastructure.csv_ to configure the remote services ip and the hypervisor (always use VMX_04 (esx) hypervisor, it doesn't really support this variable yet)
+At the end of each deploy/undeploy prints iteration numbers
 
-
-* initInfrastructureChain
-
-Login, created a datacenter, a hypervisor and refresh the datacenter repository
-
-* ''read'' chain
-
-Login and get cloud usage, enterpirse, virtualdatacenter and virtualappliance stadistics.
-Get virtual datacenters, virtual appliances and virtual machines from the enterprise
-
-* ''write'' chain
-
-Login, get the datacenter id and a virtual machine template. 
-Create a virtualdatacenter, get it, create a virtualappliance, get it, create a virtualmachien, get it. Get vm tasks and vapp pricing, then start deleting the vm, vapp and finally the vdc
-
-Look at the bottom of _simulations/VirtualResources.scala_ to modify the number of users for each chain
+* *vappId* virtual appliance identifier
+* *post_vm* failed POST vm to create _numVirtualMachinesInVapp_ virtual machines
+* *deploy* failed deploy action (post request or invalid final state)
+* *undeploy* failed undeploy action (post request or invalid final state)
+* *vmfail-D* failed virtula machine deploy retry
+* *vmfail-U* failed virtual machine undeploy retry
+* *vmdel-D* virtual machine should be deleted during undeploy
+* *deployMs* time from NOT_ALLOCATED to DEPLOYED virtual appliance
+* *undeployMs* time from DEPLOYED to NOT_DEPLOYED/UNKNOWN
