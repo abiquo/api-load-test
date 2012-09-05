@@ -161,12 +161,12 @@ class VirtualResources extends Simulation {
             chain.pause(checkPollingPause)
             .exec( (s:Session) => actionRetry("undeploy", s))
             .insertChain(updateVappState)
-            .doIf( (s:Session) => isVirtualApplianceState(s, Set("NEEDS_SYNC", "UNKNOWN")),
+            .doIf( (s:Session) => isVirtualApplianceState(s, Set("NEEDS_SYNC", "UNKNOWN", "DEPLOYED")),
                 chain.insertChain(undeployAllVms)
                 .insertChain(updateVappState)
             )
             .exec( (s:Session) => logVirtualApplianceState("uCheck",s) )                        
-        ).asLongAs((s:Session) => !isVirtualApplianceState(s, Set("NOT_DEPLOYED"))) //, "UNKNOWN"
+        ).asLongAs((s:Session) => !isVirtualApplianceState(s, Set("NOT_DEPLOYED", "NOT_ALLOCATED"))) //, "UNKNOWN"
         .exec( (s:Session) => undeployStopTime(s) )
         .exec( (s:Session) => logVirtualApplianceState("uEnd",s) )
 
