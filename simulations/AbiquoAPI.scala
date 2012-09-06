@@ -90,7 +90,7 @@ object AbiquoAPI {
     def actionRetry(action:String, s:Session) = {
         val a = action + "Retry"
         if(s.isAttributeDefined(a)) { s.setAttribute(a, s.getTypedAttribute[Long](a) + 1) }
-        else { s.setAttribute(a, 0l) }
+        else { s.setAttribute(a, 1l) }
     }
 
     def deployStartTime(s:Session)  = { s.setAttribute("deployStartTime",   currentTimeMillis) }
@@ -106,8 +106,8 @@ object AbiquoAPI {
                 Array[Object](
                     s.getTypedAttribute[String]("virtualapplianceId"),
                     getCreateVmRetry(s).asInstanceOf[java.lang.Long],
-                    s.getTypedAttribute[Long]("deployRetry").asInstanceOf[java.lang.Long],
-                    s.getTypedAttribute[Long]("undeployRetry").asInstanceOf[java.lang.Long],
+                    (s.getTypedAttribute[Long]("deployRetry") -1).asInstanceOf[java.lang.Long],
+                    (s.getTypedAttribute[Long]("undeployRetry") -1).asInstanceOf[java.lang.Long],
 
                     getDeployVmRetry(s).asInstanceOf[java.lang.Long],
                     getUndeployVmRetry(s).asInstanceOf[java.lang.Long],
@@ -127,19 +127,19 @@ object AbiquoAPI {
     }
 
     def getDelVmUndeploy(s:Session) = {
-        if(s.isAttributeDefined("delVmUndeployRetry")) { s.getTypedAttribute[Long]("delVmUndeployRetry") + 1 } else { 0l }
+        if(s.isAttributeDefined("delVmUndeployRetry")) { s.getTypedAttribute[Long]("delVmUndeployRetry")} else { 0l }
     }
     def getDelVmDeploy(s:Session) = {
-        if(s.isAttributeDefined("delVmDeployRetry")) { s.getTypedAttribute[Long]("delVmDeployRetry") + 1 } else { 0l }
+        if(s.isAttributeDefined("delVmDeployRetry")) { s.getTypedAttribute[Long]("delVmDeployRetry")} else { 0l }
     }
     def getCreateVmRetry(s:Session) = { if(s.isAttributeDefined("createVmRetry")) {
-            s.getTypedAttribute[Long]("createVmRetry") - s.getTypedAttribute[String]("numVirtualMachinesInVapp").toLong + 1 } else { 0l }
+            s.getTypedAttribute[Long]("createVmRetry") - s.getTypedAttribute[String]("numVirtualMachinesInVapp").toLong } else { 0l }
     }
     def getDeployVmRetry(s:Session) = {
-        if(s.isAttributeDefined("forceDeployVmRetry")) { s.getTypedAttribute[Long]("forceDeployVmRetry") + 1 } else { 0l }
+        if(s.isAttributeDefined("forceDeployVmRetry")) { s.getTypedAttribute[Long]("forceDeployVmRetry")} else { 0l }
     }
     def getUndeployVmRetry(s:Session) = {
-        if(s.isAttributeDefined("forceUndeployVmRetry")) { s.getTypedAttribute[Long]("forceUndeployVmRetry") + 1 } else { 0l }
+        if(s.isAttributeDefined("forceUndeployVmRetry")) { s.getTypedAttribute[Long]("forceUndeployVmRetry")} else { 0l }
     }
 
     def logVirtualApplianceState(msg:String, s:Session) = {

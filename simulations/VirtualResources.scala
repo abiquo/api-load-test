@@ -183,7 +183,7 @@ class VirtualResources extends Simulation {
         ).counterName("numVirtualmachine").times("${numVirtualMachinesInVapp}")
         .pause(0,1)
         .insertChain(deployVappHard)
-        .pause(1, 30)
+        .pause(1, 10)
         .insertChain(undeployVappHard)
         .insertChain(deleteVapp)
         .exec( (s:Session) => reportUserLoop(s) )
