@@ -106,8 +106,8 @@ object AbiquoAPI {
                 Array[Object](
                     s.getTypedAttribute[String]("virtualapplianceId"),
                     getCreateVmRetry(s).asInstanceOf[java.lang.Long],
-                    (s.getTypedAttribute[Long]("deployRetry") -1).asInstanceOf[java.lang.Long],
-                    (s.getTypedAttribute[Long]("undeployRetry") -1).asInstanceOf[java.lang.Long],
+                    s.getTypedAttribute[Long]("deployRetry").asInstanceOf[java.lang.Long],
+                    s.getTypedAttribute[Long]("undeployRetry").asInstanceOf[java.lang.Long],
 
                     getDeployVmRetry(s).asInstanceOf[java.lang.Long],
                     getUndeployVmRetry(s).asInstanceOf[java.lang.Long],
