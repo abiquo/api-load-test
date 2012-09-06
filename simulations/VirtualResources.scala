@@ -76,9 +76,13 @@ class VirtualResources extends Simulation {
     val checkCurrentVmNeedDeploy = chain
         .exec( (s:Session) => clearCurrentVmState(s) )
         .insertChain(updateVmState)
-        .doIf( (s:Session) => isCurrentVirtualMachineState(s, Set("NOT_ALLOCATED", "OFF", "UNKNOWN")),
+        .doIf( (s:Session) => isCurrentVirtualMachineState(s, Set("NOT_ALLOCATED", "OFF")),
             chain.exec( (s:Session) => actionRetry("forceDeployVm", s))
             .insertChain(deployVm)
+        )
+        .doIf( (s:Session) => isCurrentVirtualMachineState(s, Set("UNKNOWN")),
+            chain.exec( (s:Session) => actionRetry("delVmDeploy", s))
+            .insertChain(deleteVm)
         )
 
     val deployAllVms = chain

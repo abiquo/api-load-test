@@ -100,9 +100,9 @@ object AbiquoAPI {
 
     def reportUserLoop(s:Session) = {
         var userloop = LOGREPO.info(
-            "vappId {} \tpost_vm {} \tdeploy {} \tundeploy {} "
-            +"\tvmfail-D {} \tvmfail-U {} \tvmdel-U {} " //\tvmdel-D {}
-            +"\tdeployMs {} \tundeployMs {} ",
+            "vapp {} \tpostvm {} \tdeploy {} \tundeploy {} "
+            +"\tvmfail-D {} \tvmfail-U {} \tvmdel-D {} \tvmdel-U {} "
+            +"\tdeployMs {} \tundeployMs {}",
                 Array[Object](
                     s.getTypedAttribute[String]("virtualapplianceId"),
                     getCreateVmRetry(s).asInstanceOf[java.lang.Long],
@@ -111,8 +111,8 @@ object AbiquoAPI {
 
                     getDeployVmRetry(s).asInstanceOf[java.lang.Long],
                     getUndeployVmRetry(s).asInstanceOf[java.lang.Long],
+                    getDelVmDeploy(s).asInstanceOf[java.lang.Long],
                     getDelVmUndeploy(s).asInstanceOf[java.lang.Long],
-//                    getDelVmDeploy(s).asInstanceOf[java.lang.Long],
 
                     (s.getTypedAttribute[Long]("deployStopTime") - s.getTypedAttribute[Long]("deployStartTime")).asInstanceOf[java.lang.Long],
                     (s.getTypedAttribute[Long]("undeployStopTime") - s.getTypedAttribute[Long]("undeployStartTime")).asInstanceOf[java.lang.Long]

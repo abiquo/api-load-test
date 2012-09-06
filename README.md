@@ -55,6 +55,7 @@ At the end of each deploy/undeploy prints iteration numbers
 * *undeploy* failed undeploy action (post request or invalid final state)
 * *vmfail-D* failed virtula machine deploy retry
 * *vmfail-U* failed virtual machine undeploy retry
-* *vmdel-D* virtual machine should be deleted during undeploy
+* *vmdel-D* virtual machine should be deleted during deploy (unknown)
+* *vmdel-U* virtual machine should be deleted during undeploy
 * *deployMs* time from NOT_ALLOCATED to DEPLOYED virtual appliance
 * *undeployMs* time from DEPLOYED to NOT_DEPLOYED/UNKNOWN
