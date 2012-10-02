@@ -103,7 +103,6 @@ object AbiquoAPI {
             "vapp {} \tpostvm {} \tdeploy {} \tundeploy {} "
             +"\tvmfail-D {} \tvmfail-U {} \tvmdel-D {} \tvmdel-U {} "
             +"\tdeployMs {} \tundeployMs {}",
-                Array[Object](
                     s.getTypedAttribute[String]("virtualapplianceId"),
                     getCreateVmRetry(s).asInstanceOf[java.lang.Long],
                     (s.getTypedAttribute[Long]("deployRetry") -1).asInstanceOf[java.lang.Long],
@@ -116,7 +115,6 @@ object AbiquoAPI {
 
                     (s.getTypedAttribute[Long]("deployStopTime") - s.getTypedAttribute[Long]("deployStartTime")).asInstanceOf[java.lang.Long],
                     (s.getTypedAttribute[Long]("undeployStopTime") - s.getTypedAttribute[Long]("undeployStartTime")).asInstanceOf[java.lang.Long]
-                    )
             )
         LOG.trace("{}",s);
 
@@ -145,9 +143,9 @@ object AbiquoAPI {
     def logVirtualApplianceState(msg:String, s:Session) = {
         if(s.isAttributeDefined("virtualApplianceState") &&
             !s.getTypedAttribute[String]("virtualApplianceState").startsWith("LOCKED")) {
-            LOG.debug(msg + "\tvapp {}\t{}",
+            LOG.debug(msg + "\tvapp {}\t{} {}",
             s.getTypedAttribute[String]("virtualapplianceId"),
-            s.getTypedAttribute[String]("virtualApplianceState"));
+            s.getTypedAttribute[String]("virtualApplianceState"), "");
         }; s
     }
 

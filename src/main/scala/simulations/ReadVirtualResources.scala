@@ -8,11 +8,13 @@ import com.excilys.ebi.gatling.http.check.HttpCheck
 import org.glassfish.grizzly.http.util.HttpStatus._
 import com.excilys.ebi.gatling.http.request.builder.AbstractHttpRequestWithBodyBuilder
 import jodd.util.StringUtil
+import bootstrap._
+import akka.util.duration._
 
 object ReadVirtualResources {
 
-    val readVirtualResourcesScenarioChain = chain
-        .exec(http("stadistics_cloudUsage")
+    val readVirtualResourcesScenarioChain =
+        exec(http("stadistics_cloudUsage")
             get("/api/admin/statistics/cloudusage/actions/total")
             header(ACCEPT, MT_CLOUDUSE)
             check(status is 200)
@@ -56,6 +58,6 @@ object ReadVirtualResources {
 
 
     val readVirtualResourcesScenario = scenario("vdc_reads")
-            .insertChain(loginAndGetDefaultDatacenterAndTemplateChain)
-            .loop(readVirtualResourcesScenarioChain) during(5, MINUTES)
+            .exec(loginAndGetDefaultDatacenterAndTemplateChain)
+            .during(5 minutes) { readVirtualResourcesScenarioChain }
 }

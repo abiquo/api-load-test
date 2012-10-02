@@ -2,6 +2,7 @@ import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.core.Predef._
 import AbiquoAPI._
+import bootstrap._
 
 object AdminLogin{
 
@@ -14,13 +15,12 @@ object AdminLogin{
         if(!s.isAttributeDefined(paramname)) {
             println("FATAL ''" + paramname + "'' not set in session, check capture methods")
             println(s)
-            exit(0);
+            sys.exit(0);
         }
         true
     }
 
-    val loginChain = chain.exec(
-        http("getlogin")
+    val loginChain = exec(http("login")
         get("/api/login")
         header(ACCEPT, MT_USER)
         basicAuth("${loginuser}","${loginpassword}")
@@ -28,8 +28,8 @@ object AdminLogin{
     )
 
     //{pre: initInfrastructureChain} Loggin and sets $datacenterId and $templateId
-    val loginAndGetDefaultDatacenterAndTemplateChain = chain
-        .insertChain(loginChain)
+    val loginAndGetDefaultDatacenterAndTemplateChain =  
+        exec(loginChain)
         .exec(http("GET_Datacenters")
             get("/api/admin/datacenters")
             header(ACCEPT, MT_DCS)
@@ -40,6 +40,6 @@ object AdminLogin{
             header(ACCEPT, MT_VMTS)
             check(status is 200, captureTemplateId)
         )
-        .doIf( (s:Session) => exitIfNoDefined(s, "datacenterId"), chain.pause(0,1))
-        .doIf( (s:Session) => exitIfNoDefined(s, "templateId"), chain.pause(0,1))
+        .doIf( (s:Session) => exitIfNoDefined(s, "datacenterId")) { pause(0,1) }
+        .doIf( (s:Session) => exitIfNoDefined(s, "templateId")) { pause(0,1) }
 }

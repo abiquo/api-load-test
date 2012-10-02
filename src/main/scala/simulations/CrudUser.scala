@@ -3,6 +3,8 @@ import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.Predef._
 import AbiquoAPI._
 import AdminLogin._
+import bootstrap._
+import akka.util.duration._
 
 class CrudUser extends Simulation {
 
@@ -13,14 +15,14 @@ class CrudUser extends Simulation {
 	// end configure
 
 
-	val readUsersChain = chain.exec(http("GET_Users")
+	val readUsersChain = exec(http("GET_Users")
 			get("/api/admin/enterprises/${enterpriseId}/users") queryParam("numResults", "100") queryParam("page", "0")  queryParam("desc", "false") queryParam("orderBy", "name") queryParam("connected", "false")
 			header(ACCEPT, MT_USERS)
 			check( status is(200) )
 		)
 		.pause(1,2) // wait before next loop
 
-	val crudUserChain = chain.exec(http("POST_User")
+	val crudUserChain = exec(http("POST_User")
 			post("/api/admin/enterprises/${enterpriseId}/users")
 			header(ACCEPT, MT_USER) header(CONTENT_TYPE, MT_USER)
 			fileBody("user.xml",
@@ -53,14 +55,14 @@ class CrudUser extends Simulation {
 
 
 	val write_scn = scenario("crud User")
-			.insertChain(loginChain)
+			.exec(loginChain)
 			.feed(csv("users.csv").circular)
-			//.insertChain(crudUserChain)
-			.loop(crudUserChain)    times(100) //during(20, MINUTES)
+			//.exec(crudUserChain)
+			.repeat(100) { crudUserChain }
 
 	val read_sn = scenario("get Users")
-			.insertChain(loginChain)
-			.loop(readUsersChain)   during(5, MINUTES)
+			.exec(loginChain)
+			.during(5 minutes) { readUsersChain }
 
 	def apply = {
 
