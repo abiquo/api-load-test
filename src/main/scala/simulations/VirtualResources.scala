@@ -28,36 +28,42 @@ class VirtualResources extends Simulation {
     val createVapp = exec(http("POST_VAPP")
             post(POST_VAPP) header(ACCEPT, MT_VAPP) header(CONTENT_TYPE, MT_VAPP)
             fileBody("vapp.xml", vappContent)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(CREATED), captureErrors("POST_VAPP"), captureVirtualapplianceId)
         )
         //.doIf( (s:Session) => exitIfNoDefined(s, "virtualapplianceId"), chain.pause(0,1))
 
     val deleteVapp = exec(http("DEL_VAPP")
             delete(DEL_VAPP) header(ACCEPT, MT_XML)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(NO_CONTENT) )
             //captureErrors("DEL_VAPP") SAXParseException: Premature end of file.
         )
 
     val updateVmState = exec(http("GET_VM_STATE")
             get(GET_VM_STATE) header(ACCEPT, MT_VMSTATE)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(OK), captureCurrentVmState )
         )
 
     val undeployVm = exec(http("ACTION_VM_UNDEPLOY")
             post(ACTION_VM_UNDEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
             fileBody("vmtask.xml", vmtaskContent)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(ACCEPTED) )
         )
         // don't wait (undeplyVapp)
 
     val deleteVm = exec(http("DEL_VM")
             delete(DEL_VM)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(NO_CONTENT) )
         )
 
     val deployVm = exec(http("ACTION_VM_DEPLOY")
             post(ACTION_VM_DEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
             fileBody("vmtask.xml", vmtaskContent)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(ACCEPTED) )
         )
         // don't wait (deplyVapp)
@@ -101,6 +107,7 @@ class VirtualResources extends Simulation {
     val createVm = exec(http("POST_VM")
             post(POST_VM) header(ACCEPT, MT_VM) header(CONTENT_TYPE, MT_VM_NODE)
             fileBody("vm.xml", vmContent)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(CREATED) saveAs("currentVmCreated"), captureErrors("POST_VM"), captureCurrentVirtualmachineId )
         )
         .exec( (s:Session) =>  saveCurrentVirtualmachineId(s))
@@ -115,12 +122,14 @@ class VirtualResources extends Simulation {
 
     val updateVappState = exec(http("GET_VAPP_STATE")
             get(GET_VAPP_STATE) header(ACCEPT, MT_VAPPSTATE)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(OK), captureVirtualapplianceState )
         )
 
     val deployVapp = exec(http("ACTION_VAPP_DEPLOY")
             post(ACTION_VAPP_DEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
             fileBody("vmtask.xml", vmtaskContent)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(ACCEPTED) saveAs("acceptedDeply"), captureErrors("ACTION_VAPP_DEPLOY") )
         )
 
@@ -149,6 +158,7 @@ class VirtualResources extends Simulation {
     val undeployVapp = exec(http("ACTION_VAPP_UNDEPLOY")
             post(ACTION_VAPP_UNDEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
             fileBody("vmtask.xml", vmtaskContent)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is(ACCEPTED) saveAs("acceptedUndeply"), captureErrors("ACTION_VAPP_UNDEPLOY") )
         )
 
@@ -176,7 +186,11 @@ class VirtualResources extends Simulation {
 
     val deployVirtualApplianceChain = 
         exec(loginChain)
-        .exec(createVapp)
+        .tryMax(3, "createvapp")
+        {
+         createVapp
+        }
+        //.exec(createVapp)
         .repeat("${numVirtualMachinesInVapp}", "numVirtualmachine") {
             exec(createVmWithRetry)
             .pause(0, 5) // slow down create vm conflicts
