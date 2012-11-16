@@ -75,12 +75,12 @@ class VirtualResources extends Simulation {
             exec( (s:Session) => actionRetry("forceUndeployVm", s))
             .exec(undeployVm)
         }    
-        .pause(1)
-        .exec(updateVmState)
-        .doIf( (s:Session) => isCurrentVirtualMachineState(s, Set("UNKNOWN", "NOT_ALLOCATED"))) {
-            exec( (s:Session) => actionRetry("delVmUndeploy", s))
-            .exec(deleteVm)
-        }
+        // .pause(1)
+        // .exec(updateVmState)
+        // .doIf( (s:Session) => isCurrentVirtualMachineState(s, Set("NOT_ALLOCATED"))) {
+        //     exec( (s:Session) => actionRetry("delVmUndeploy", s))
+        //     .exec(deleteVm)
+        // }
 
     val checkCurrentVmNeedDeploy = 
         exec( (s:Session) => clearCurrentVmState(s) )
@@ -89,10 +89,10 @@ class VirtualResources extends Simulation {
             exec( (s:Session) => actionRetry("forceDeployVm", s))
             .exec(deployVm)
         }
-        .doIf( (s:Session) => isCurrentVirtualMachineState(s, Set("UNKNOWN"))) {
-            exec( (s:Session) => actionRetry("delVmDeploy", s))
-            .exec(deleteVm)
-        }
+//        .doIf( (s:Session) => isCurrentVirtualMachineState(s, Set("UNKNOWN"))) {
+//            exec( (s:Session) => actionRetry("delVmDeploy", s))
+//            .exec(deleteVm)
+//        }
 
     val deployAllVms = repeat("${numVirtualMachinesInVapp}", "numVirtualmachine") {
             exec( (s:Session) => setCurrentVmId(s) )
