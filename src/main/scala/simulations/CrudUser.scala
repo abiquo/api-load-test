@@ -2,7 +2,7 @@ import com.excilys.ebi.gatling.core.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.Predef._
 import AbiquoAPI._
-import AdminLogin._
+import API._
 import bootstrap._
 import akka.util.duration._
 
@@ -55,13 +55,13 @@ class CrudUser extends Simulation {
 
 
 	val write_scn = scenario("crud User")
-			.exec(loginChain)
+			.exec(login)
 			.feed(csv("users.csv").circular)
 			//.exec(crudUserChain)
 			.repeat(100) { crudUserChain }
 
 	val read_sn = scenario("get Users")
-			.exec(loginChain)
+			.exec(login)
 			.during(5 minutes) { readUsersChain }
 
 	def apply = {

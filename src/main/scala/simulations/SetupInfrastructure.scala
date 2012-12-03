@@ -2,7 +2,7 @@ import com.excilys.ebi.gatling.core.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.Predef._
 import AbiquoAPI._
-import AdminLogin._
+import API._
 import com.excilys.ebi.gatling.http.check.HttpCheck
 import org.glassfish.grizzly.http.util.HttpStatus._
 import com.excilys.ebi.gatling.http.request.builder.AbstractHttpRequestWithBodyBuilder
@@ -15,7 +15,7 @@ object SetupInfrastructure extends Simulation {
     def captureMachineId    = regex("""machines/(\d+)""") find(0) saveAs("machineId")
 
     //Create a Datacenter a Rack a Machine and refresh the DatacenterRepository: sets $datacenterId, $rackId, $machineId, $templateId
-    val setupInfrastructureChain = 
+    val setupInfrastructureChain =
         // Datacenter
         exec(http("POST_Datacenter")
             post("/api/admin/datacenters")
@@ -24,8 +24,7 @@ object SetupInfrastructure extends Simulation {
                 Map("remoteservicesIp" -> "${remoteservicesIp}"))
             check(  status is(201), captureDatacenterId)
         )
-        .doIf( (s:Session) => exitIfNoDefined(s, "datacenterId")) { pause(1) }
-
+        .exitHereIfFailed
         // Rack
         .exec(http("POST_Rack")
             post("/api/admin/datacenters/${datacenterId}/racks")
@@ -34,8 +33,7 @@ object SetupInfrastructure extends Simulation {
                 Map("name" -> "myrack"))
             check(  status is(201),captureRackId )
         )
-        .doIf( (s:Session) => exitIfNoDefined(s, "rackId")) { pause(1) }
-
+        .exitHereIfFailed
         // Machine (do not use nodecollector) from feeder 'infrastructure.csv'
         // get("/api/admin/datacenters/${datacenter}/action/hypervisor") queryParam("ip", "10.60.1.120")
         // get("/api/admin/datacenters/2/action/discoversingle") queryParam("ip", "10.60.1.120") ....
@@ -48,8 +46,7 @@ object SetupInfrastructure extends Simulation {
             )
             check(  status is(201), captureMachineId )
         )
-        .doIf( (s:Session) => exitIfNoDefined(s, "machineId")) { pause(1) }
-
+        .exitHereIfFailed
         // Refresh the DatacenterRespository
         .exec(http("refreshDatacenterRepo")
             get("/api/admin/enterprises/${enterpriseId}/datacenterrepositories/${datacenterId}") queryParam("refresh", "true") queryParam("usage", "true")
@@ -61,7 +58,7 @@ object SetupInfrastructure extends Simulation {
 
 
     val setupInfrastructureScenario = scenario("initInfrastructure")
-        .exec(loginChain)
+        .exec(login)
         .feed(csv("infrastructure.csv"))
         .exec(setupInfrastructureChain)
 

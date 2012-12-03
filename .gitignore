@@ -1,1 +1,4 @@
+abiquo.log
 target/*
+results/*
+src/main/cache/*

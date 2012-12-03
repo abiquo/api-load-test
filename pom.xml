@@ -7,9 +7,9 @@
     <version>0.0.4</version>
 
     <properties>
-        <gatling.version>1.3.4</gatling.version>
+        <gatling.version>1.3.5</gatling.version>
     </properties>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -18,11 +18,11 @@
                 <version>${gatling.version}</version>
                 <configuration>
                     <!-- <configFile>gatling.conf</configFile> -->
-                    <resultsFolder>results</resultsFolder>                    
+                    <resultsFolder>results</resultsFolder>
                     <simulationsFolder>src/main/scala/simulations</simulationsFolder>
                     <requestBodiesFolder>src/main/resources/request-bodies</requestBodiesFolder>
                     <dataFolder>src/main/resources/data</dataFolder>
-                    
+
                     <includes>
                         <include>**/VirtualResources.scala</include>
                     </includes>
