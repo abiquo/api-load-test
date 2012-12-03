@@ -66,6 +66,7 @@ class VirtualResources extends Simulation {
 
     val deployVirtualApplianceChain =
         exec(login)
+        .exitHereIfFailed
         .exec(createVappAndAddVms)
         .exitHereIfFailed
         .exec(deployVappHard)
@@ -87,6 +88,7 @@ class VirtualResources extends Simulation {
             .feed(Array(Map("loginuser" -> "admin", "loginpassword" -> "xabiquo")).circular)            
             .during( 1 hours) {
                 login
+                .exitHereIfFailed
                 .during( 29 minutes, "stadistics") {
                     stadistics
                     .exec(listByEnterprise)                
@@ -98,8 +100,8 @@ class VirtualResources extends Simulation {
         val httpConf = httpConfig.baseURL(baseUrl).disableAutomaticReferer
 
         List(
-            deployVirtualAppliance .configure users(numUsers) ramp(rampTime seconds) protocolConfig httpConfig.baseURL(baseUrl)
-            , pollStadistics       .configure users(60)       ramp(1 minutes)        protocolConfig httpConfig.baseURL(baseUrl)
+            deployVirtualAppliance .configure users(numUsers) ramp( rampTime seconds)                   protocolConfig httpConfig.baseURL(baseUrl)
+            , pollStadistics       .configure users(60)       delay(rampTime seconds) ramp(1 minutes)   protocolConfig httpConfig.baseURL(baseUrl)
         )
     }
 }
