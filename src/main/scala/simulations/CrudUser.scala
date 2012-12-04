@@ -6,71 +6,40 @@ import API._
 import bootstrap._
 import akka.util.duration._
 
-class CrudUser extends Simulation {
+class CrudUser  extends Simulation {
 
-	// configure
+	val duration = 29 minutes;
 
-    val baseUrl  = System.getProperty("baseUrl","http://localhost:80")
+	val crudUser = exec(createUser)
+		.exitHereIfFailed
+		.exec(getUser)
+		.exec(modifyUser)
+		.exec(getUser)
+		.exec(delUser)
+		.exec(getNoUser)
 
-	// end configure
-
-
-	val readUsersChain = exec(http("GET_Users")
-			get("/api/admin/enterprises/${enterpriseId}/users") queryParam("numResults", "100") queryParam("page", "0")  queryParam("desc", "false") queryParam("orderBy", "name") queryParam("connected", "false")
-			header(ACCEPT, MT_USERS)
-			check( status is(200) )
-		)
-		.pause(1,2) // wait before next loop
-
-	val crudUserChain = exec(http("POST_User")
-			post("/api/admin/enterprises/${enterpriseId}/users")
-			header(ACCEPT, MT_USER) header(CONTENT_TYPE, MT_USER)
-			fileBody("user.xml",
-				Map("lusername" -> "${lusername}",
-					"lusernick" -> "${lusername}"))
-			check(  status is(201),
-					regex("""users/(\d+)""") saveAs("luserId") )
-		)
-		.exec(http("GET_User")
-			get("/api/admin/enterprises/${enterpriseId}/users/${luserId}")
-			header(ACCEPT, MT_USER)
-			check(  status is(200),
-					regex("""users/${luserId}""") exists )
-		)
-		.exec(http("PUT_User")
-			put("/api/admin/enterprises/${enterpriseId}/users/${luserId}")
-			header(ACCEPT, MT_USER) header(CONTENT_TYPE, MT_USER)
-			fileBody("user.xml",
-				Map("lusername" -> "${lusername}modified",
-					"lusernick" -> "${lusername}"))
-			check(  status is(200),
-					regex("""${lusername}modified""") exists )
-		)
-		.exec(http("DEL_User")
-			delete("/api/admin/enterprises/${enterpriseId}/users/${luserId}")
-			header(ACCEPT, MT_XML)
-			check( status is(204) )
-		)
-		.pause(1,2) // wait before next loop
-
-
-	val write_scn = scenario("crud User")
+	val write = scenario("crudUser")
+			.feed(loginFeed)
 			.exec(login)
 			.feed(csv("users.csv").circular)
-			//.exec(crudUserChain)
-			.repeat(100) { crudUserChain }
+			.during(duration) {
+			//.repeat(100) {
+				crudUser
+				.pause(0, 2) // wait before next loop
+			}
 
-	val read_sn = scenario("get Users")
+	val read = scenario("readUsers")
+			.feed(loginFeed)
 			.exec(login)
-			.during(5 minutes) { readUsersChain }
+			.during(duration) {
+				getUsers
+				.pause(0, 2) // wait before next loop
+			}
 
 	def apply = {
-
-		val httpConf = httpConfig.baseURL(baseUrl)
-
-		List(
-		read_sn.configure   users 100              ramp 100 protocolConfig httpConf,
-		write_scn.configure users 100  delay 101   ramp 100 protocolConfig httpConf
-		)
-	}
+        List(
+            write  .configure users(numUsers) ramp( rampTime seconds)                 protocolConfig httpConf
+            , read .configure users(60)       delay(rampTime seconds) ramp(1 minutes) protocolConfig httpConf
+        )
+    }
 }

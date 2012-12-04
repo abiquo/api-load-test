@@ -18,12 +18,78 @@ object API {
     val login = exec(http("LOGIN")
         get(LOGIN) header(ACCEPT, MT_USER)
         basicAuth("${loginuser}","${loginpassword}")
-        check(status is OK, captureEnterpriseId, captureUserId )
+        check( status is OK, captureEnterpriseId, captureUserId )
     )
+
+    val getUsers = exec(http("GET_USERS")
+            get(USERS) header(ACCEPT, MT_USERS)
+            queryParam("numResults", "100") queryParam("page", "0")  queryParam("desc", "false") queryParam("orderBy", "name") queryParam("connected", "false")
+            check( status is OK )
+        )
+
+    val createUser = exec(http("POST_USER")
+            post(USERS) header(ACCEPT, MT_USER) header(CONTENT_TYPE, MT_USER)
+            fileBody("user.xml", userContent)
+            check( status is CREATED, captureLuserId)
+        )
+
+    // use {luserId}
+    val getUser = exec(http("GET_USER")
+            get(LUSER) header(ACCEPT, MT_USER)
+            check( status is OK, checkLuserId)
+        )
+
+    val getNoUser = exec(http("GET_USER")
+            get(LUSER) header(ACCEPT, MT_USER)
+            check( status is NOT_FOUND)
+        )
+
+    val modifyUser = exec(http("PUT_USER")
+            put(LUSER) header(ACCEPT, MT_USER) header(CONTENT_TYPE, MT_USER)
+            fileBody("user.xml", userContentPut)
+            check( status is OK)//regex("""${lusername}modified""") exists
+        )
+
+    val delUser = exec(http("DEL_USER")
+            delete(LUSER) header(ACCEPT, MT_XML)
+            check( status is NO_CONTENT )
+        )
+
+    val createConfDatacenter = exec(http("POST_DC")
+            post(DCS) header(ACCEPT, MT_DC) header(CONTENT_TYPE, MT_DC)
+            fileBody("datacenter.xml",
+                Map("remoteservicesIp" -> "${remoteservicesIp}"))
+            check( status is CREATED, captureDatacenterId)
+        )
+
+    val createConfRack = exec(http("POST_RACK")
+            post(RACKS) header(ACCEPT, MT_RACK) header(CONTENT_TYPE, MT_RACK)
+            fileBody("rack.xml",
+                Map("name" -> "myrack"))
+            check( status is CREATED, captureRackId )
+        )
+
+    // Machine (do not use nodecollector) from feeder 'infrastructure.csv'
+    // get("/api/admin/datacenters/${datacenter}/action/hypervisor") queryParam("ip", "10.60.1.120")
+    // get("/api/admin/datacenters/2/action/discoversingle") queryParam("ip", "10.60.1.120") ....
+    val createConfMachine = exec(http("POST_MACHS")
+            post(MACHS) header(ACCEPT, MT_MACHINE) header(CONTENT_TYPE, MT_MACHINE)
+            fileBody("machine.xml", Map(
+                "hypervisorIp"      -> "${hypervisorIp}",
+                "hypervisorType"    -> "${hypervisorType}")
+            )
+            check( status is CREATED, captureMachineId )
+        )
+
+    val refreshRepository = exec(http("ACTION_REPO_REFRESH")
+            get(REPO) header(ACCEPT, MT_DC_REPO)
+            queryParam("refresh", "true") queryParam("usage", "true")
+            check( status is OK)
+        )
 
     //{pre: login (enterpiseId and userId)} Set $datacenterId
     val getDefaultDatacenter = exec(http("GET_DC")
-            get(DC) header(ACCEPT, MT_DCS)
+            get(DCS) header(ACCEPT, MT_DCS)
             check(status is ACCEPTED, captureDatacenterId)
         )
 
@@ -32,13 +98,6 @@ object API {
             get(VMTS) header(ACCEPT, MT_VMTS)
             queryParam("hypervisorTypeName", "VBOX")//${hypervisorType}")
             check(status is ACCEPTED, captureTemplateId)
-        )
-
-    val createVm = exec(http("POST_VM")
-            post(VMS) header(ACCEPT, MT_VM) header(CONTENT_TYPE, MT_VM_NODE)
-            fileBody("vm.xml", vmContent)
-            basicAuth("${loginuser}","${loginpassword}")
-            check( status is CREATED )
         )
 
     val createVapp = exec(http("POST_VAPP")
@@ -73,6 +132,39 @@ object API {
             fileBody("vmtask.xml", vmtaskContent)
             basicAuth("${loginuser}","${loginpassword}")
             check( status is ACCEPTED, captureErrors("ACTION_VAPP_UNDEPLOY") )
+        )
+
+    val createVm = exec(http("POST_VM")
+            post(VMS) header(ACCEPT, MT_VM) header(CONTENT_TYPE, MT_VM_NODE)
+            fileBody("vm.xml", vmContent)
+            basicAuth("${loginuser}","${loginpassword}")
+            check( status is CREATED )
+        )
+
+    val updateVmState = exec(http("GET_VM_STATE")
+            get(VM_STATE) header(ACCEPT, MT_VMSTATE)
+            basicAuth("${loginuser}","${loginpassword}")
+            check( status is OK, captureCurrentVmState )
+        )
+
+    val deployVm = exec(http("ACTION_VM_DEPLOY")
+            post(VM_DEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
+            fileBody("vmtask.xml", vmtaskContent)
+            basicAuth("${loginuser}","${loginpassword}")
+            check( status is(ACCEPTED) )
+        )
+
+    val undeployVm = exec(http("ACTION_VM_UNDEPLOY")
+            post(VM_UNDEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
+            fileBody("vmtask.xml", vmtaskContent)
+            basicAuth("${loginuser}","${loginpassword}")
+            check( status is ACCEPTED )
+        )
+
+    val deleteVm = exec(http("DEL_VM")
+            delete(VM)
+            basicAuth("${loginuser}","${loginpassword}")
+            check( status is NO_CONTENT )
         )
 
     val stadistics =

@@ -50,16 +50,22 @@ object AbiquoAPI {
     val CREATED     = 201
     val ACCEPTED    = 202
     val NO_CONTENT  = 204
+    val NOT_FOUND   = 404
 
     val LOG     = LoggerFactory.getLogger("abiquo");
     val LOGREPO = LoggerFactory.getLogger("repo");
 
     val LOGIN       = "/api/login"
-    val DC          = "/api/admin/datacenters"    
+    val USERS       = "/api/admin/enterprises/${enterpriseId}/users"
+    val LUSER       = "/api/admin/enterprises/${enterpriseId}/users/${luserId}"
+    val DCS         = "/api/admin/datacenters"
+    val RACKS       = "/api/admin/datacenters/${datacenterId}/racks"
+    val MACHS       = "/api/admin/datacenters/${datacenterId}/racks/${rackId}/machines"
+    val REPO        = "/api/admin/enterprises/${enterpriseId}/datacenterrepositories/${datacenterId}"
     val VMTS        = "/api/admin/enterprises/${enterpriseId}/datacenterrepositories/${datacenterId}/virtualmachinetemplates"
     val VAPPS       = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances"
     val VAPP        = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}"
-    val VAPP_STATE  = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/state"    
+    val VAPP_STATE  = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/state"
     val VAPP_UNDEPLOY="/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/action/undeploy"
     val VAPP_DEPLOY = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/action/deploy"
     val VMS         = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines"
@@ -73,12 +79,20 @@ object AbiquoAPI {
     def captureTemplateId              = regex("""virtualmachinetemplates/(\d+)""") find(0) saveAs("templateId")
     def captureEnterpriseId            = regex("""enterprises/(\d+)/users/""") find(0) saveAs("enterpriseId")
     def captureUserId                  = regex("""users/(\d+)""") find(0) saveAs("currentUserId")
+    def captureLuserId                 = regex("""users/(\d+)""") find(0) saveAs("luserId")
+    def checkLuserId                   = regex("""users/${luserId}""") find(0) exists
+    def captureRackId                  = regex("""racks/(\d+)""") find(0) saveAs("rackId")
+    def captureMachineId               = regex("""machines/(\d+)""") find(0) saveAs("machineId")
     def captureErrors(exec:String)     = xpath("""/errors/error/code""").findAll.notExists.saveAs("error-"+exec)
     def captureVirtualapplianceState   = xpath("""/virtualApplianceState/power""").find.exists.saveAs("virtualApplianceState")
     def captureVirtualapplianceId      = regex("""virtualappliances/(\d+)/""").find.exists.saveAs("virtualapplianceId")
-    //def captureCurrentVmState          = xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")
-    //def captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("virtualmachineId")
+    def captureCurrentVmState          = xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")
+    def captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("virtualmachineId")
 
+    def userContent     = Map(  "lusername" -> "${lusername}",
+                                "lusernick" -> "${lusername}")
+    def userContentPut  = Map(  "lusername" -> "${lusername}",
+                                "lusernick" -> "${lusername}modifiec")
     def vmtaskContent   = Map(  "force" -> "true")
     def vappContent     = Map(  "name" -> "myVirtualappliance")
     def vmContent       = Map(  "name"          -> "myVirtualmachine",
@@ -94,9 +108,11 @@ object AbiquoAPI {
         s.isAttributeDefined("virtualApplianceState")  && states.contains(s.getTypedAttribute[String]("virtualApplianceState"))
     }
 
+    def loginFeed = Array(Map("loginuser" -> "admin", "loginpassword" -> "xabiquo")).circular
+
     def reportUserLoop(s:Session) = {
         if(s.isAttributeDefined("virtualApplianceState"))  {
-            LOGREPO.info("vapp {}\t deployMs {}\t undeployMs{}", 
+            LOGREPO.info("vapp {}\t deployMs {}\t undeployMs{}",
                 s.getTypedAttribute[String]("virtualapplianceId"),
                 (s.getTypedAttribute[Long]("deployStopTime") - s.getTypedAttribute[Long]("deployStartTime")).asInstanceOf[java.lang.Long],
                 (s.getTypedAttribute[Long]("undeployStopTime") - s.getTypedAttribute[Long]("undeployStartTime")).asInstanceOf[java.lang.Long])
@@ -115,4 +131,11 @@ object AbiquoAPI {
             s.getTypedAttribute[String]("virtualApplianceState"), "");
         }; s
     }
+
+    val baseUrl  = System.getProperty("baseUrl","http://localhost:80")
+    val numUsers = Integer.getInteger("numUsers", 1)
+    val rampTime = Integer.getInteger("rampTime", 1).toLong
+    val userLoop = Integer.getInteger("userLoop", 1)
+    val httpConf = httpConfig.baseURL(baseUrl).disableAutomaticReferer
+
 }

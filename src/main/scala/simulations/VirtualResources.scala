@@ -16,12 +16,6 @@ import akka.util.duration._
 
 class VirtualResources extends Simulation {
 
-    // configure
-
-    val baseUrl  = System.getProperty("baseUrl","http://localhost:80")
-    val numUsers = Integer.getInteger("numUsers", 1)
-    val rampTime = Integer.getInteger("rampTime", 1).toLong
-    val userLoop = Integer.getInteger("userLoop", 1)
     val retry    = 5;
     val pollPause= 5
 
@@ -85,23 +79,21 @@ class VirtualResources extends Simulation {
             }
 
     val pollStadistics = scenario("pollStadistics")
-            .feed(Array(Map("loginuser" -> "admin", "loginpassword" -> "xabiquo")).circular)            
+            .feed(loginFeed)
             .during( 1 hours) {
                 login
                 .exitHereIfFailed
                 .during( 29 minutes, "stadistics") {
                     stadistics
-                    .exec(listByEnterprise)                
+                    .exec(listByEnterprise)
                     .pause(0, 5)
                 }
             }
 
     def apply = {
-        val httpConf = httpConfig.baseURL(baseUrl).disableAutomaticReferer
-
         List(
-            deployVirtualAppliance .configure users(numUsers) ramp( rampTime seconds)                   protocolConfig httpConfig.baseURL(baseUrl)
-            , pollStadistics       .configure users(60)       delay(rampTime seconds) ramp(1 minutes)   protocolConfig httpConfig.baseURL(baseUrl)
+            deployVirtualAppliance .configure users(numUsers) ramp( rampTime seconds)                  protocolConfig httpConf
+            , pollStadistics       .configure users(60)       delay(rampTime seconds) ramp(1 minutes)  protocolConfig httpConf
         )
     }
 }
