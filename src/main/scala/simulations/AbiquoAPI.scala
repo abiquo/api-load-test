@@ -90,14 +90,16 @@ object AbiquoAPI {
     def captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("virtualmachineId")
 
     def userContent     = Map(  "lusername" -> "${lusername}",
-                                "lusernick" -> "${lusername}")
+                                "lusernick" -> "${lusername}",
+                                "desc"      -> "created")
     def userContentPut  = Map(  "lusername" -> "${lusername}",
-                                "lusernick" -> "${lusername}modifiec")
-    def vmtaskContent   = Map(  "force" -> "true")
-    def vappContent     = Map(  "name" -> "myVirtualappliance")
-    def vmContent       = Map(  "name"          -> "myVirtualmachine",
-                                "datacenterId"  -> "${datacenterId}",
-                                "templateId"    -> "${templateId}")
+                                "lusernick" -> "${lusername}",
+                                "desc"      -> "modify")
+    def vmtaskContent   = Map(  "force"     -> "true")
+    def vappContent     = Map(  "name"      -> "myVirtualappliance")
+    def vmContent       = Map(  "name"      -> "myVirtualmachine",
+                                "datacenterId"->"${datacenterId}",
+                                "templateId"-> "${templateId}")
 
     def deployStartTime(s:Session)  = { s.setAttribute("deployStartTime",   currentTimeMillis) }
     def deployStopTime(s:Session)   = { s.setAttribute("deployStopTime",    currentTimeMillis) }
@@ -112,7 +114,7 @@ object AbiquoAPI {
 
     def reportUserLoop(s:Session) = {
         if(s.isAttributeDefined("virtualApplianceState"))  {
-            LOGREPO.info("vapp {}\t deployMs {}\t undeployMs{}",
+            LOGREPO.info("vapp {}\t deployMs {}\t undeployMs {}",
                 s.getTypedAttribute[String]("virtualapplianceId"),
                 (s.getTypedAttribute[Long]("deployStopTime") - s.getTypedAttribute[Long]("deployStartTime")).asInstanceOf[java.lang.Long],
                 (s.getTypedAttribute[Long]("undeployStopTime") - s.getTypedAttribute[Long]("undeployStartTime")).asInstanceOf[java.lang.Long])

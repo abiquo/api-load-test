@@ -22,11 +22,9 @@
                     <simulationsFolder>src/main/scala/simulations</simulationsFolder>
                     <requestBodiesFolder>src/main/resources/request-bodies</requestBodiesFolder>
                     <dataFolder>src/main/resources/data</dataFolder>
-
                     <includes>
-                        <include>**/VirtualResources.scala</include>
-                    </includes>
-                    <!-- <simulations>VirtualResources</simulations> -->
+                        <include>**/${simulation}.scala</include>
+                    </includes> 
                     <jvmArgs>
                         <jvmArg>-DbaseUrl=${baseUrl}</jvmArg>
                         <jvmArg>-DnumUsers=${numUsers}</jvmArg>

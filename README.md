@@ -6,11 +6,7 @@ This repo contains [Gatling scripts](https://github.com/excilys/gatling) to test
 Run using Maven
 ------------------
 
-Run using the __pom.xml__ project
-
-````
-$ mvn gatling:execute -Dgatling.simulations=VirtualResources -DbaseUrl=http://10.60.1.223:80 -DnumUsers=10 -DrampTime=30 -DuserLoop=5
-````
+Acepted parameters
 
 * *baseUrl* abiquo api location
 * *numUsers* total users to simulate
@@ -19,9 +15,17 @@ $ mvn gatling:execute -Dgatling.simulations=VirtualResources -DbaseUrl=http://10
 
 See _gatling.conf_ for timeout (simulation/request) configuration, by default max simulation time is 2hours and request timeout to 1.6 minutes (!!!). Also check _logback.xml_ to log failed responses.
 
+CrudUsers
+---------
+````
+$ mvn gatling:execute -Dsimulation=CrudUser -DbaseUrl=http://10.60.1.223:80 -DnumUsers=200 -DrampTime=100 -DuserLoop=10
+````
 
 VirtualResources
 ----------------
+````
+$ mvn gatling:execute -Dsimulation=VirtualResources -DbaseUrl=http://10.60.1.223:80 -DnumUsers=10 -DrampTime=30 -DuserLoop=5
+````
 
 Each user deploy and undeploys a virtual appliance, if it fails repeat until success
 
