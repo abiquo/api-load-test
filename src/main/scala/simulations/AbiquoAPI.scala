@@ -6,7 +6,6 @@ import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.check.HttpCheck
-import org.glassfish.grizzly.http.util.HttpStatus._
 
 object AbiquoAPI {
     val ABQ_VERSION = """; version=2.4 """
@@ -96,8 +95,8 @@ object AbiquoAPI {
         if(s.isAttributeDefined("currentVmId") && s.isAttributeDefined("currentVmBody")) {
             s.setAttribute(vmkey+"-id",      s.getTypedAttribute[Int]("currentVmId"))
              .setAttribute(vmkey+"-content", s.getTypedAttribute[String]("currentVmBody"))
-        } 
-        else{  
+        }
+        else{
             LOG.error("can't get virtual machine {}", vmkey); s
         }
     }

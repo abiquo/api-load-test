@@ -2,3 +2,7 @@ abiquo.log
 target/*
 results/*
 src/main/cache/*
+.classpath
+.project
+.settings/
+.cache

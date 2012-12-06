@@ -2,7 +2,6 @@ import com.excilys.ebi.gatling.core.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.http.check.HttpCheck
-import org.glassfish.grizzly.http.util.HttpStatus._
 import com.excilys.ebi.gatling.http.request.builder.AbstractHttpRequestWithBodyBuilder
 import com.excilys.ebi.gatling.core.structure.ChainBuilder
 import jodd.util.StringUtil
