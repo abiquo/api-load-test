@@ -74,7 +74,8 @@ object AbiquoAPI {
     val VM_DEPLOY   = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/action/deploy"
     val VM_UNDEPLOY = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/action/undeploy"
 
-
+    def captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("currentVmId")
+    def captureCurrentVirtualmachine   = bodyString.saveAs("currentVmBody")
     def captureDatacenterId            = regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId")
     def captureTemplateId              = regex("""virtualmachinetemplates/(\d+)""") find(0) saveAs("templateId")
     def captureEnterpriseId            = regex("""enterprises/(\d+)/users/""") find(0) saveAs("enterpriseId")
@@ -87,7 +88,25 @@ object AbiquoAPI {
     def captureVirtualapplianceState   = xpath("""/virtualApplianceState/power""").find.exists.saveAs("virtualApplianceState")
     def captureVirtualapplianceId      = regex("""virtualappliances/(\d+)/""").find.exists.saveAs("virtualapplianceId")
     def captureCurrentVmState          = xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")
-    def captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("virtualmachineId")
+
+    def vmAttributeByCounter(s:Session)     = { "virtualmachine-" + s.getTypedAttribute[String]("numVm") }
+    def setCurrentVmId(s:Session)           = { s.setAttribute("currentVmId", s.getTypedAttribute[String](vmAttributeByCounter(s)+"-id")) }
+    def saveCurrentVirtualmachine(s:Session)= {
+        val vmkey = vmAttributeByCounter(s);
+        if(s.isAttributeDefined("currentVmId") && s.isAttributeDefined("currentVmBody")) {
+            s.setAttribute(vmkey+"-id",      s.getTypedAttribute[Int]("currentVmId"))
+             .setAttribute(vmkey+"-content", s.getTypedAttribute[String]("currentVmBody"))
+        } 
+        else{  
+            LOG.error("can't get virtual machine {}", vmkey); s
+        }
+    }
+
+    def reconfigureVmBody(s:Session)   = {
+        val body = s.getTypedAttribute[String](vmAttributeByCounter(s)+"-content").replaceAll("<cpu>1</cpu>","<cpu>2</cpu>")
+        //LOG.debug("reconfigure will {}", body)
+        body
+    }
 
     def userContent     = Map(  "lusername" -> "${lusername}",
                                 "lusernick" -> "${lusername}",
@@ -109,6 +128,9 @@ object AbiquoAPI {
     def isVirtualApplianceState(s:Session, states:Set[String]) = {
         s.isAttributeDefined("virtualApplianceState")  && states.contains(s.getTypedAttribute[String]("virtualApplianceState"))
     }
+    def isVirtualMachineState(s:Session, states:Set[String]) = {
+        s.isAttributeDefined("currentVmState")  && states.contains(s.getTypedAttribute[String]("currentVmState"))
+    }
 
     def loginFeed = Array(Map("loginuser" -> "admin", "loginpassword" -> "xabiquo")).circular
 
@@ -122,7 +144,11 @@ object AbiquoAPI {
         else { LOGREPO.info("can't create vapp") }
 
         LOG.trace("{}",s);
-        s.removeAttribute("virtualApplianceState")
+        s.removeAttribute("virtualApplianceState").removeAttribute("currentVmState").removeAttribute("currentVmId").removeAttribute("currentVmBody")
+    }
+
+    def printSession(s:Session) = {
+        LOG.info("{}",s); s
     }
 
     def logVirtualApplianceState(msg:String, s:Session) = {
@@ -131,6 +157,12 @@ object AbiquoAPI {
             LOG.debug(msg + "\tvapp {}\t{} {}",
             s.getTypedAttribute[String]("virtualapplianceId"),
             s.getTypedAttribute[String]("virtualApplianceState"), "");
+        }; s
+    }
+
+    def logVmState(s:Session) = {
+        if(s.isAttributeDefined("currentVmState")) {
+            LOG.info("fucking vm is in state {} ", s.getTypedAttribute[String]("currentVmState"));
         }; s
     }
 

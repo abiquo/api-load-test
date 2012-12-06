@@ -22,13 +22,41 @@ class VirtualResources extends Simulation {
     val createVmWithRetry = tryMax(retry, "postVMRetry") {
             createVm
         }
+        .exec(s => saveCurrentVirtualmachine(s))
+        //.exec(s => printSession(s))
 
     val createVappAndAddVms = tryMax(retry, "createvapp") {
             createVapp
         }
-        .repeat("${numVirtualMachinesInVapp}", "numVirtualmachine") {
+        .repeat("${numVirtualMachinesInVapp}", "numVm") {
             createVmWithRetry
             //.pause(0, 5) // slow down create vm conflicts
+        }
+
+    val waitVmStateOff = exec(updateVmState)
+        .asLongAs(s => !isVirtualMachineState(s, Set("OFF"))) {
+            pause(pollPause)
+            .exec(updateVmState)
+        }
+
+    val reconfigureVmAndWaitStateOff =
+        exec(reconfigVm)
+        .exec(waitVmStateOff)
+
+    val powerOffAndPerhapsReconfigure =
+            exec(powerOffVm)
+            .exec(waitVmStateOff)
+            .randomSwitch(
+                50 -> reconfigureVmAndWaitStateOff,
+                50 -> updateVmState //XXX do nothing
+            )
+
+    val reconfigureVmsFromDeployedVapp = repeat("${numVirtualMachinesInVapp}", "numVm") {
+            exec( (s:Session) => setCurrentVmId(s) )
+            .randomSwitch(
+                50 -> powerOffAndPerhapsReconfigure,
+                50 -> updateVmState //XXX do nothing
+            )
         }
 
     val deployVappHard =
@@ -64,13 +92,14 @@ class VirtualResources extends Simulation {
         .exec(createVappAndAddVms)
         .exitHereIfFailed
         .exec(deployVappHard)
-        .pause(1, 10)
+        .pause(0, 5)
+        .exec(reconfigureVmsFromDeployedVapp)
+        .pause(0, 5)
         .exec(undeployVappHard)
         //FIXME do not delete the vapp
         //.exec(deleteVapp)
         .exec( s => reportUserLoop(s))
         .pause(0, 5) // wait before next loop in deployVirtualApplianceChain
-
 
     val deployVirtualAppliance = scenario("deployVirtualAppliance")
             .feed(csv("virtualdatacenter.csv").circular)

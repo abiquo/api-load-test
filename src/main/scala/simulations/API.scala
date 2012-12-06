@@ -138,13 +138,25 @@ object API {
             post(VMS) header(ACCEPT, MT_VM) header(CONTENT_TYPE, MT_VM_NODE)
             fileBody("vm.xml", vmContent)
             basicAuth("${loginuser}","${loginpassword}")
-            check( status is CREATED )
+            check( status is CREATED, captureCurrentVirtualmachine, captureCurrentVirtualmachineId )
         )
 
     val updateVmState = exec(http("GET_VM_STATE")
             get(VM_STATE) header(ACCEPT, MT_VMSTATE)
             basicAuth("${loginuser}","${loginpassword}")
             check( status is OK, captureCurrentVmState )
+        )
+
+    val reconfigVm = exec(http("PUT_VM")
+            put(VM) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VM)
+            body(s => reconfigureVmBody(s))
+            check( status is ACCEPTED, captureErrors("reconfig"))
+        )
+
+    val powerOffVm = exec(http("ACTION_VM_OFF")
+            put(VM+"/state") header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMSTATE)
+            body("""<virtualmachinestate><state>OFF</state></virtualmachinestate>""")
+            check(status is ACCEPTED, captureErrors("off"))
         )
 
     val deployVm = exec(http("ACTION_VM_DEPLOY")
