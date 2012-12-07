@@ -102,47 +102,40 @@ object API {
     val createVapp = exec(http("POST_VAPP")
             post(VAPPS) header(ACCEPT, MT_VAPP) header(CONTENT_TYPE, MT_VAPP)
             fileBody("vapp.xml", vappContent)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is CREATED, captureErrors("POST_VAPP"), captureVirtualapplianceId)
         )
 
     val deleteVapp = exec(http("DEL_VAPP")
             delete(VAPP) header(ACCEPT, MT_XML)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is NO_CONTENT )
             //captureErrors("DEL_VAPP") SAXParseException: Premature end of file.
         )
 
     val updateVappState = exec(http("GET_VAPP_STATE")
             get(VAPP_STATE) header(ACCEPT, MT_VAPPSTATE)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is OK, captureVirtualapplianceState )
         )
 
     val deployVapp = exec(http("ACTION_VAPP_DEPLOY")
             post(VAPP_DEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
             fileBody("vmtask.xml", vmtaskContent)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is ACCEPTED, captureErrors("ACTION_VAPP_DEPLOY") )
         )
 
     val undeployVapp = exec(http("ACTION_VAPP_UNDEPLOY")
             post(VAPP_UNDEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
             fileBody("vmtask.xml", vmtaskContent)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is ACCEPTED, captureErrors("ACTION_VAPP_UNDEPLOY") )
         )
 
     val createVm = exec(http("POST_VM")
             post(VMS) header(ACCEPT, MT_VM) header(CONTENT_TYPE, MT_VM_NODE)
             fileBody("vm.xml", vmContent)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is CREATED, captureCurrentVirtualmachine, captureCurrentVirtualmachineId )
         )
 
     val updateVmState = exec(http("GET_VM_STATE")
             get(VM_STATE) header(ACCEPT, MT_VMSTATE)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is OK, captureCurrentVmState )
         )
 
@@ -161,20 +154,17 @@ object API {
     val deployVm = exec(http("ACTION_VM_DEPLOY")
             post(VM_DEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
             fileBody("vmtask.xml", vmtaskContent)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is(ACCEPTED) )
         )
 
     val undeployVm = exec(http("ACTION_VM_UNDEPLOY")
             post(VM_UNDEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
             fileBody("vmtask.xml", vmtaskContent)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is ACCEPTED )
         )
 
     val deleteVm = exec(http("DEL_VM")
             delete(VM)
-            basicAuth("${loginuser}","${loginpassword}")
             check( status is NO_CONTENT )
         )
 
