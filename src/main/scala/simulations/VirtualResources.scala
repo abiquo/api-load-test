@@ -15,21 +15,19 @@ import akka.util.duration._
 
 class VirtualResources extends Simulation {
 
-    val retry    = 5;
+    val retry    = 5
     val pollPause= 5
 
     val createVmWithRetry = tryMax(retry, "postVMRetry") {
             createVm
         }
         .exec(s => saveCurrentVirtualmachine(s))
-        //.exec(s => printSession(s))
 
     val createVappAndAddVms = tryMax(retry, "createvapp") {
             createVapp
         }
         .repeat("${numVirtualMachinesInVapp}", "numVm") {
             createVmWithRetry
-            //.pause(0, 5) // slow down create vm conflicts
         }
 
     val waitVmStateOff = exec(updateVmState)
@@ -37,22 +35,34 @@ class VirtualResources extends Simulation {
             pause(pollPause)
             .exec(updateVmState)
         }
+
+    val waitVappDeployed = exec(updateVappState)
+        .asLongAs(s => !isVirtualApplianceState(s, Set("DEPLOYED"))) {
+            pause(pollPause)
+            .exec(updateVappState)
+        }
     
-    val reconfigureVmFromGetVmAndWaitOff =  exitBlockOnFail {
+    val waitVappUndeployed = exec(updateVappState)
+        .asLongAs(s => !isVirtualApplianceState(s, Set("NOT_DEPLOYED", "NOT_ALLOCATED"))) {
+            pause(pollPause)
+            .exec(updateVappState)
+        }
+    
+    val reconfigureFromGetVm =  exitBlockOnFail {
 	    	exec(updateVmContent)
 	    	.exec(reconfigVm)
-	        .exec(waitVmStateOff)
+	        //.exec(waitVmStateOff) vm is LOCKED
     	}
         
     val powerOffAndPerhapsReconfigure =
             exec(powerOffVm)
             .exec(waitVmStateOff)
             .randomSwitch(
-                50 -> reconfigureVmFromGetVmAndWaitOff,
+                50 -> reconfigureFromGetVm,
                 50 -> updateVmState //XXX do nothing
             )
 
-    val reconfigureVmsFromDeployedVapp = repeat("${numVirtualMachinesInVapp}", "numVm") {
+    val foreachVmReconfigureChance = repeat("${numVirtualMachinesInVapp}", "numVm") {
             exec( (s:Session) => setCurrentVmId(s) )
             .randomSwitch(
                 50 -> powerOffAndPerhapsReconfigure,
@@ -66,25 +76,16 @@ class VirtualResources extends Simulation {
         .tryMax(retry, "retryDeploy") {
             deployVapp
         }
-        .exec(updateVappState)
-        .asLongAs(s => !isVirtualApplianceState(s, Set("DEPLOYED"))) {
-            pause(pollPause)
-            .exec(updateVappState)
-        }
+        .exec(waitVappDeployed)
         .exec(s => deployStopTime(s))
         .exec(s => logVirtualApplianceState("deploy", s))
-
 
     val undeployVappHard =
         exec(s =>  undeployStartTime(s))
         .tryMax(retry, "retryUndeploy") {
             undeployVapp
         }
-        .exec(updateVappState)
-        .asLongAs(s => !isVirtualApplianceState(s, Set("NOT_DEPLOYED", "NOT_ALLOCATED"))) {
-            pause(pollPause)
-            .exec(updateVappState)
-        }
+        .exec(waitVappUndeployed)
         .exec(s => undeployStopTime(s))
         .exec(s => logVirtualApplianceState("undeploy",s))
 
@@ -95,11 +96,13 @@ class VirtualResources extends Simulation {
         .exitHereIfFailed
         .exec(deployVappHard)
         .pause(0, 5)
-        .exec(reconfigureVmsFromDeployedVapp)
+        .exec(foreachVmReconfigureChance)
+        .exec(waitVappDeployed) // some LOCKED vms reconfiguring
         .pause(0, 5)
         .exec(undeployVappHard)
-        //FIXME do not delete the vapp
-        //.exec(deleteVapp)
+        .doIf(delVapp){ // default false
+          deleteVapp
+        }
         .exec( s => reportUserLoop(s))
         .pause(0, 5) // wait before next loop in deployVirtualApplianceChain
 

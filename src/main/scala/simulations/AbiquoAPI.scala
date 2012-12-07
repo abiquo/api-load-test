@@ -166,6 +166,7 @@ object AbiquoAPI {
     }
 
     val baseUrl  = System.getProperty("baseUrl","http://localhost:80")
+    val delVapp  = System.getProperty("delVapp","false") == "true"
     val numUsers = Integer.getInteger("numUsers", 1)
     val rampTime = Integer.getInteger("rampTime", 1).toLong
     val userLoop = Integer.getInteger("userLoop", 1)
