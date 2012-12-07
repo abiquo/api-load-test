@@ -7,6 +7,10 @@ import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.check.HttpCheck
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector
+import com.abiquo.server.core.cloud.VirtualMachineDto
+
 object AbiquoAPI {
     val ABQ_VERSION = """; version=2.4 """
 
@@ -101,10 +105,14 @@ object AbiquoAPI {
         }
     }
 
+    val objectMapper = new ObjectMapper().setAnnotationIntrospector(new JaxbAnnotationIntrospector)
     def reconfigureVmBody(s:Session)   = {
-        val body = s.getTypedAttribute[String]("currentVmBody").replaceAll("<cpu>1</cpu>","<cpu>2</cpu>")
-        //LOG.debug("reconfigure will {}", body)
-        body
+        val vmcontent = s.getTypedAttribute[String]("currentVmBody")
+        val vm = objectMapper.readValue(vmcontent, classOf[VirtualMachineDto])
+
+        vm.setCpu(2)
+
+        objectMapper.writeValueAsString(vm)
     }
 
     def userContent     = Map(  "lusername" -> "${lusername}",
