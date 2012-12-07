@@ -37,16 +37,18 @@ class VirtualResources extends Simulation {
             pause(pollPause)
             .exec(updateVmState)
         }
-
-    val reconfigureVmAndWaitStateOff =
-        exec(reconfigVm)
-        .exec(waitVmStateOff)
-
+    
+    val reconfigureVmFromGetVmAndWaitOff =  exitBlockOnFail {
+	    	exec(updateVmContent)
+	    	.exec(reconfigVm)
+	        .exec(waitVmStateOff)
+    	}
+        
     val powerOffAndPerhapsReconfigure =
             exec(powerOffVm)
             .exec(waitVmStateOff)
             .randomSwitch(
-                50 -> reconfigureVmAndWaitStateOff,
+                50 -> reconfigureVmFromGetVmAndWaitOff,
                 50 -> updateVmState //XXX do nothing
             )
 
@@ -56,6 +58,7 @@ class VirtualResources extends Simulation {
                 50 -> powerOffAndPerhapsReconfigure,
                 50 -> updateVmState //XXX do nothing
             )
+            .exec( (s:Session) => clearCurrentVmId(s) )
         }
 
     val deployVappHard =

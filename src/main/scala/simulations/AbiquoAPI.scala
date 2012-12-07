@@ -90,11 +90,11 @@ object AbiquoAPI {
 
     def vmAttributeByCounter(s:Session)     = { "virtualmachine-" + s.getTypedAttribute[String]("numVm") }
     def setCurrentVmId(s:Session)           = { s.setAttribute("currentVmId", s.getTypedAttribute[String](vmAttributeByCounter(s)+"-id")) }
+    def clearCurrentVmId(s:Session)			= { s.removeAttribute("currentVmId").removeAttribute("currentVmState").removeAttribute("currentVmBody")}
     def saveCurrentVirtualmachine(s:Session)= {
         val vmkey = vmAttributeByCounter(s);
-        if(s.isAttributeDefined("currentVmId") && s.isAttributeDefined("currentVmBody")) {
+        if(s.isAttributeDefined("currentVmId")) {
             s.setAttribute(vmkey+"-id",      s.getTypedAttribute[Int]("currentVmId"))
-             .setAttribute(vmkey+"-content", s.getTypedAttribute[String]("currentVmBody"))
         }
         else{
             LOG.error("can't get virtual machine {}", vmkey); s
@@ -102,7 +102,7 @@ object AbiquoAPI {
     }
 
     def reconfigureVmBody(s:Session)   = {
-        val body = s.getTypedAttribute[String](vmAttributeByCounter(s)+"-content").replaceAll("<cpu>1</cpu>","<cpu>2</cpu>")
+        val body = s.getTypedAttribute[String]("currentVmBody").replaceAll("<cpu>1</cpu>","<cpu>2</cpu>")
         //LOG.debug("reconfigure will {}", body)
         body
     }
@@ -143,7 +143,7 @@ object AbiquoAPI {
         else { LOGREPO.info("can't create vapp") }
 
         LOG.trace("{}",s);
-        s.removeAttribute("virtualApplianceState").removeAttribute("currentVmState").removeAttribute("currentVmId").removeAttribute("currentVmBody")
+        s.removeAttribute("virtualApplianceState")
     }
 
     def printSession(s:Session) = {

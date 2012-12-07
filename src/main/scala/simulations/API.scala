@@ -131,7 +131,12 @@ object API {
     val createVm = exec(http("POST_VM")
             post(VMS) header(ACCEPT, MT_VM) header(CONTENT_TYPE, MT_VM_NODE)
             fileBody("vm.xml", vmContent)
-            check( status is CREATED, captureCurrentVirtualmachine, captureCurrentVirtualmachineId )
+            check( status is CREATED, captureCurrentVirtualmachineId )
+        )
+    
+    val updateVmContent = exec(http("GET_VM")
+        get(VM) header(ACCEPT, MT_VM)
+        check( status is OK, captureCurrentVirtualmachine )
         )
 
     val updateVmState = exec(http("GET_VM_STATE")
@@ -146,7 +151,7 @@ object API {
         )
 
     val powerOffVm = exec(http("ACTION_VM_OFF")
-            put(VM+"/state") header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMSTATE)
+            put(VM_STATE) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMSTATE)
             body("""<virtualmachinestate><state>OFF</state></virtualmachinestate>""")
             check(status is ACCEPTED, captureErrors("off"))
         )
