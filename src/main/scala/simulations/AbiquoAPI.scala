@@ -7,6 +7,13 @@ import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.check.HttpCheck
 
+import javax.xml.bind.JAXBContext
+import javax.xml.stream.XMLInputFactory
+import java.io.StringReader
+import java.io.StringWriter
+
+import com.abiquo.server.core.cloud.VirtualMachineDto
+
 object AbiquoAPI {
     val ABQ_VERSION = """; version=2.4 """
 
@@ -101,10 +108,18 @@ object AbiquoAPI {
         }
     }
 
-    def reconfigureVmBody(s:Session)   = {
-        val body = s.getTypedAttribute[String]("currentVmBody").replaceAll("<cpu>1</cpu>","<cpu>2</cpu>")
-        //LOG.debug("reconfigure will {}", body)
-        body
+    val context = JAXBContext.newInstance(classOf[VirtualMachineDto])
+    val factory = XMLInputFactory.newInstance()
+    val readVm(vmcontent:String) : VirtualMachineDto= { context.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(vmcontent))).asInstanceOf[VirtualMachineDto] }
+    val writeVm(vm:VirtualMachineDto) : String      = { val sw = new StringWriter(); context.createMarshaller().marshal(vm, sw); sw.toString() }
+
+    def reconfigureVmBody(s:Session) = {
+        val vmcontent = s.getTypedAttribute[String]("currentVmBody")
+        val vm = readVm(vmcontent)
+
+        vm.setCpu(2)
+
+        writeVm(vm)
     }
 
     def userContent     = Map(  "lusername" -> "${lusername}",
