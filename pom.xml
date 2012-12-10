@@ -63,6 +63,8 @@
                         <jvmArg>-DrampTime=${rampTime}</jvmArg>
                         <jvmArg>-DuserLoop=${userLoop}</jvmArg>
                         <jvmArg>-DdelVapp=${delVapp}</jvmArg>
+                        <jvmArg>-Dundeploy=${undeploy}</jvmArg>
+                        <jvmArg>-DstatisticsTime=${statisticsTime}</jvmArg>
                     </jvmArgs>
                 </configuration>
                 <dependencies>

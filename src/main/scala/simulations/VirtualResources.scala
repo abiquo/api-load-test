@@ -99,7 +99,9 @@ class VirtualResources extends Simulation {
         .exec(foreachVmReconfigureChance)
         .exec(waitVappDeployed) // some LOCKED vms reconfiguring
         .pause(0, 5)
-        .exec(undeployVappHard)
+        .doIf(undeploy){ // default true
+            undeployVappHard
+        }
         .doIf(delVapp){ // default false
           deleteVapp
         }
@@ -114,20 +116,24 @@ class VirtualResources extends Simulation {
 
     val pollStadistics = scenario("pollStadistics")
             .feed(loginFeed)
-            .during( 1 hours) {
-                login
-                .exitHereIfFailed
-                .during( 29 minutes, "stadistics") {
-                    stadistics
-                    .exec(listByEnterprise)
-                    .pause(0, 5)
+            .doIf(statisticsTime > 0) {
+                during( statisticsTime seconds ) {
+                    login
+                    .exitHereIfFailed
+                    .during( 5 minutes, "stadistics") {
+                        stadistics
+                        .exec(listByEnterprise)
+                        .pause(0, 5)
+                    }
                 }
             }
 
+
+
     def apply = {
         List(
-            deployVirtualAppliance .configure users(numUsers) ramp( rampTime seconds)                  protocolConfig httpConf
-            , pollStadistics       .configure users(60)       delay(rampTime seconds) ramp(1 minutes)  protocolConfig httpConf
+        deployVirtualAppliance .configure users(numUsers) ramp( rampTime seconds)                  protocolConfig httpConf
+        , pollStadistics       .configure users(60)       delay(rampTime seconds) ramp(1 minutes)  protocolConfig httpConf
         )
     }
 }

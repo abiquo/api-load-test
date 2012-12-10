@@ -13,6 +13,13 @@ Acepted parameters
 * *rampTime* in seconds, at this time all the _numUsers_ will be running
 * *userLoop* iteration for each user
 
+(only for VirtualResources)
+
+* *delVapp* indicate if the vapp should be deleted (default false)
+* *undeploy* indicate if the vapp should be undeployed (default true)
+* *statisticsTime* seconds during 60 users will retrieve cloud and enterprise statistics (default no statistics)
+
+
 See _gatling.conf_ for timeout (simulation/request) configuration, by default max simulation time is 2hours and request timeout to 1.6 minutes (!!!). Also check _logback.xml_ to log failed responses.
 
 CrudUsers

@@ -110,8 +110,8 @@ object AbiquoAPI {
 
     val context = JAXBContext.newInstance(classOf[VirtualMachineDto])
     val factory = XMLInputFactory.newInstance()
-    val readVm(vmcontent:String) : VirtualMachineDto= { context.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(vmcontent))).asInstanceOf[VirtualMachineDto] }
-    val writeVm(vm:VirtualMachineDto) : String      = { val sw = new StringWriter(); context.createMarshaller().marshal(vm, sw); sw.toString() }
+    def readVm(vmcontent:String) : VirtualMachineDto= { context.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(vmcontent))).asInstanceOf[VirtualMachineDto] }
+    def writeVm(vm:VirtualMachineDto) : String      = { val sw = new StringWriter(); context.createMarshaller().marshal(vm, sw); sw.toString() }
 
     def reconfigureVmBody(s:Session) = {
         val vmcontent = s.getTypedAttribute[String]("currentVmBody")
@@ -149,13 +149,13 @@ object AbiquoAPI {
     def loginFeed = Array(Map("loginuser" -> "admin", "loginpassword" -> "xabiquo")).circular
 
     def reportUserLoop(s:Session) = {
-        if(s.isAttributeDefined("virtualApplianceState"))  {
+        if(s.isAttributeDefined("virtualApplianceState") && s.isAttributeDefined("undeployStopTime"))  {
             LOGREPO.info("vapp {}\t deployMs {}\t undeployMs {}",
                 s.getTypedAttribute[String]("virtualapplianceId"),
                 (s.getTypedAttribute[Long]("deployStopTime") - s.getTypedAttribute[Long]("deployStartTime")).asInstanceOf[java.lang.Long],
                 (s.getTypedAttribute[Long]("undeployStopTime") - s.getTypedAttribute[Long]("undeployStartTime")).asInstanceOf[java.lang.Long])
         }
-        else { LOGREPO.info("can't create vapp") }
+        else { LOGREPO.info("can't create vapp (or not undeploy)") }
 
         LOG.trace("{}",s);
         s.removeAttribute("virtualApplianceState")
@@ -180,11 +180,13 @@ object AbiquoAPI {
         }; s
     }
 
-    val baseUrl  = System.getProperty("baseUrl","http://localhost:80")
-    val delVapp  = System.getProperty("delVapp","false") == "true"
+    val baseUrl  = System.getProperty("baseUrl",   "http://localhost:80")
+    val undeploy = System.getProperty("undeploy",  "true") == "true"
+    val delVapp  = System.getProperty("delVapp",   "false")== "true"
     val numUsers = Integer.getInteger("numUsers", 1)
     val rampTime = Integer.getInteger("rampTime", 1).toLong
     val userLoop = Integer.getInteger("userLoop", 1)
-    val httpConf = httpConfig.baseURL(baseUrl).disableAutomaticReferer
+    val statisticsTime= Integer.getInteger("statisticsTime", 0).toLong
 
+    val httpConf = httpConfig.baseURL(baseUrl).disableAutomaticReferer
 }
