@@ -2,6 +2,14 @@
 <virtualDatacenter>
 	<link href="http://localhost:8080/api/admin/datacenters/<%= datacenterId %>" rel="datacenter" />
 	<link href="http://localhost:8080/api/admin/enterprises/<%= enterpriseId %>" rel="enterprise" />
+	<name><%= name %></name>
+	<hypervisorType><%= hypervisorType %></hypervisorType>
+	<network>
+		<address>192.168.0.0</address>
+		<gateway>192.168.0.1</gateway>
+		<mask>24</mask>
+		<name>default_private_network</name>
+	</network>
 	<cpuHard>0</cpuHard>
 	<cpuSoft>0</cpuSoft>
 	<hdHard>0</hdHard>
@@ -14,15 +22,4 @@
 	<storageSoft>0</storageSoft>
 	<vlansHard>0</vlansHard>
 	<vlansSoft>0</vlansSoft>
-	<hypervisorType>VBOX</hypervisorType>
-	<name><%= name %></name>
-	<network>
-		<address>192.168.0.0</address>
-		<gateway>192.168.0.1</gateway>
-		<mask>24</mask>
-		<name>default_private_network</name>
-		<primaryDNS></primaryDNS>
-		<secondaryDNS></secondaryDNS>
-		<sufixDNS></sufixDNS>
-	</network>
 </virtualDatacenter>

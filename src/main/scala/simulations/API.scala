@@ -28,7 +28,11 @@ object API {
 
     val createUser = exec(http("POST_USER")
             post(USERS) header(ACCEPT, MT_USER) header(CONTENT_TYPE, MT_USER)
-            fileBody("user.xml", userContent)
+            fileBody("user.xml", Map(
+                "lusername" -> "${lusername}",
+                "lusernick" -> "${lusername}",
+                "desc"      -> "created")
+            )
             check( status is CREATED, captureLuserId)
         )
 
@@ -45,7 +49,11 @@ object API {
 
     val modifyUser = exec(http("PUT_USER")
             put(LUSER) header(ACCEPT, MT_USER) header(CONTENT_TYPE, MT_USER)
-            fileBody("user.xml", userContentPut)
+            fileBody("user.xml", Map(
+                "lusername" -> "${lusername}",
+                "lusernick" -> "${lusername}",
+                "desc"      -> "modify")
+            )
             check( status is OK)//regex("""${lusername}modified""") exists
         )
 
@@ -101,7 +109,7 @@ object API {
 
     val createVapp = exec(http("POST_VAPP")
             post(VAPPS) header(ACCEPT, MT_VAPP) header(CONTENT_TYPE, MT_VAPP)
-            fileBody("vapp.xml", vappContent)
+            fileBody("vapp.xml", Map("name" -> "myVirtualappliance"))
             check( status is CREATED, captureErrors("POST_VAPP"), captureVirtualapplianceId)
         )
 
@@ -113,27 +121,54 @@ object API {
 
     val updateVappState = exec(http("GET_VAPP_STATE")
             get(VAPP_STATE) header(ACCEPT, MT_VAPPSTATE)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is OK, captureVirtualapplianceState )
         )
 
     val deployVapp = exec(http("ACTION_VAPP_DEPLOY")
             post(VAPP_DEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
-            fileBody("vmtask.xml", vmtaskContent)
+            fileBody("vmtask.xml", Map("force" -> "true"))
             check( status is ACCEPTED, captureErrors("ACTION_VAPP_DEPLOY") )
         )
 
     val undeployVapp = exec(http("ACTION_VAPP_UNDEPLOY")
             post(VAPP_UNDEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
-            fileBody("vmtask.xml", vmtaskContent)
+            fileBody("vmtask.xml", Map("force" -> "true"))
             check( status is ACCEPTED, captureErrors("ACTION_VAPP_UNDEPLOY") )
         )
 
     val createVm = exec(http("POST_VM")
             post(VMS) header(ACCEPT, MT_VM) header(CONTENT_TYPE, MT_VM_NODE)
-            fileBody("vm.xml", vmContent)
+            fileBody("vm.xml",
+            Map("name"        -> "myVirtualmachine",
+                "enterpriseId"->"${enterpriseId}",
+                "datacenterId"->"${datacenterId}",
+                "templateId"  ->"${templateId}")
+            )
             check( status is CREATED, captureCurrentVirtualmachineId )
         )
-    
+
+    val createVdc = exec(http("POST_VDC")
+            post(VDCS) header(ACCEPT, MT_VDC) header(CONTENT_TYPE, MT_VDC)
+            fileBody("vdc.xml", Map(
+                "name"          -> "myVirtualDatacenter",
+                "enterpriseId"  ->"${enterpriseId}",
+                "datacenterId"  ->"${datacenterId}",
+                "hypervisorType"->"${hypervisorType}")
+            )
+            check( status is CREATED, captureVirtualDatacenterId )
+        )
+
+    val deleteVdc = exec(http("DEL_VDC")
+            delete(VDC) header(ACCEPT, MT_XML)
+            check( status is NO_CONTENT )
+    )
+
+    val getVmTasks = exec(http("VM_TASKS")
+        get(VM_TASKS) header(ACCEPT, MT_TASKS)
+        check( status is OK, captureCurrentVirtualmachineTasks)
+        )
+
     val updateVmContent = exec(http("GET_VM")
         get(VM) header(ACCEPT, MT_VM)
         check( status is OK, captureCurrentVirtualmachine )
@@ -141,6 +176,7 @@ object API {
 
     val updateVmState = exec(http("GET_VM_STATE")
             get(VM_STATE) header(ACCEPT, MT_VMSTATE)
+            basicAuth("${loginuser}","${loginpassword}")
             check( status is OK, captureCurrentVmState )
         )
 
@@ -158,13 +194,13 @@ object API {
 
     val deployVm = exec(http("ACTION_VM_DEPLOY")
             post(VM_DEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
-            fileBody("vmtask.xml", vmtaskContent)
+            fileBody("vmtask.xml", Map("force" -> "true"))
             check( status is(ACCEPTED) )
         )
 
     val undeployVm = exec(http("ACTION_VM_UNDEPLOY")
             post(VM_UNDEPLOY) header(ACCEPT, MT_ACCEPTED) header(CONTENT_TYPE, MT_VMTASK)
-            fileBody("vmtask.xml", vmtaskContent)
+            fileBody("vmtask.xml", Map("force" -> "true"))
             check( status is ACCEPTED )
         )
 

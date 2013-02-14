@@ -1,0 +1,2 @@
+vappDeployTime,powerOffVm,reconfigure,undeployVapp,deleteVapp,deleteVdc
+10,true,true,true,true,true

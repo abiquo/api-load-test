@@ -1,17 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <virtualmachinewithnode>
-	<link href="http://localhost:8080/api/admin/enterprises/1/datacenterrepositories/<%= datacenterId %>/virtualmachinetemplates/<%= templateId %>" rel="virtualmachinetemplate" />
-	<cpu>1</cpu>
-	<ram>128</ram>
-	<highDisponibility>0</highDisponibility>
-	<idState>1</idState>
-	<idType>1</idType>
-	<description>this is a test, this is only a test</description>
-	<password></password>
-	<state>NOT_ALLOCATED</state>
-	<uuid></uuid>
-	<vdrpPort>0</vdrpPort>
-	<nodeName><%= name %></nodeName>
-	<x>-179</x>
-	<y>-104</y>
+    <link href="http://localhost:8080/api/admin/enterprises/<%= enterpriseId %>/datacenterrepositories/<%= datacenterId %>/virtualmachinetemplates/<%= templateId %>" rel="virtualmachinetemplate" />
+    <nodeName><%= name %></nodeName>
+    <description>this is a test, this is only a test</description>
 </virtualmachinewithnode>

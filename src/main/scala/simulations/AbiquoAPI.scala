@@ -6,6 +6,7 @@ import com.excilys.ebi.gatling.core.session.Session
 import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.check.HttpCheck
+import com.excilys.ebi.gatling.core.session.{ EvaluatableString, Session }
 
 import javax.xml.bind.JAXBContext
 import javax.xml.stream.XMLInputFactory
@@ -13,6 +14,7 @@ import java.io.StringReader
 import java.io.StringWriter
 
 import com.abiquo.server.core.cloud.VirtualMachineDto
+import com.abiquo.server.core.task.TasksDto
 
 object AbiquoAPI {
     val ABQ_VERSION = """; version=2.4 """
@@ -43,12 +45,12 @@ object AbiquoAPI {
     val MT_VM       = """application/vnd.abiquo.virtualmachine+xml""" + ABQ_VERSION
     val MT_VMS      = """application/vnd.abiquo.virtualmachines+xml""" + ABQ_VERSION
     val MT_VMSTATE  = """application/vnd.abiquo.virtualmachinestate+xml""" + ABQ_VERSION
+    val MT_VMTASK   = """application/vnd.abiquo.virtualmachinetask+xml"""+ ABQ_VERSION
     val MT_ACCEPTED = """application/vnd.abiquo.acceptedrequest+xml""" + ABQ_VERSION
     val MT_TASKS    = """application/vnd.abiquo.tasks+xml""" + ABQ_VERSION
     val MT_TASK     = """application/vnd.abiquo.task+xml""" + ABQ_VERSION
     val MT_VOLS     = """application/vnd.abiquo.iscsivolumes+xml""" + ABQ_VERSION
     val MT_VLAN     = """application/vnd.abiquo.vlan+xml""" + ABQ_VERSION
-    val MT_VMTASK   = """application/vnd.abiquo.virtualmachinetask+xml"""+ ABQ_VERSION
     val MT_XML      = """application/xml"""
     val MT_PLAIN    = """text/plain"""
 
@@ -69,6 +71,8 @@ object AbiquoAPI {
     val MACHS       = "/api/admin/datacenters/${datacenterId}/racks/${rackId}/machines"
     val REPO        = "/api/admin/enterprises/${enterpriseId}/datacenterrepositories/${datacenterId}"
     val VMTS        = "/api/admin/enterprises/${enterpriseId}/datacenterrepositories/${datacenterId}/virtualmachinetemplates"
+    val VDCS        = "/api/cloud/virtualdatacenters"
+    val VDC         = "/api/cloud/virtualdatacenters/${virtualdatacenterId}"
     val VAPPS       = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances"
     val VAPP        = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}"
     val VAPP_STATE  = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/state"
@@ -76,12 +80,14 @@ object AbiquoAPI {
     val VAPP_DEPLOY = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/action/deploy"
     val VMS         = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines"
     val VM          = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}"
+    val VM_TASKS    = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/tasks"
     val VM_STATE    = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/state"
     val VM_DEPLOY   = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/action/deploy"
     val VM_UNDEPLOY = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/action/undeploy"
 
     def captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("currentVmId")
     def captureCurrentVirtualmachine   = bodyString.saveAs("currentVmBody")
+    def captureCurrentVirtualmachineTasks= bodyString.saveAs("currentVmTasks")
     def captureDatacenterId            = regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId")
     def captureTemplateId              = regex("""virtualmachinetemplates/(\d+)""") find(0) saveAs("templateId")
     def captureEnterpriseId            = regex("""enterprises/(\d+)/users/""") find(0) saveAs("enterpriseId")
@@ -94,10 +100,11 @@ object AbiquoAPI {
     def captureVirtualapplianceState   = xpath("""/virtualApplianceState/power""").find.exists.saveAs("virtualApplianceState")
     def captureVirtualapplianceId      = regex("""virtualappliances/(\d+)/""").find.exists.saveAs("virtualapplianceId")
     def captureCurrentVmState          = xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")
+    def captureVirtualDatacenterId     = regex("""virtualdatacenters/(\d+)/""").find.exists.saveAs("virtualdatacenterId")
 
     def vmAttributeByCounter(s:Session)     = { "virtualmachine-" + s.getTypedAttribute[String]("numVm") }
     def setCurrentVmId(s:Session)           = { s.setAttribute("currentVmId", s.getTypedAttribute[String](vmAttributeByCounter(s)+"-id")) }
-    def clearCurrentVmId(s:Session)			= { s.removeAttribute("currentVmId").removeAttribute("currentVmState").removeAttribute("currentVmBody")}
+    def clearCurrentVmId(s:Session)			= { s.removeAttribute("currentVmId").removeAttribute("currentVmState").removeAttribute("currentVmBody").removeAttribute("currentVmTasks")}
     def saveCurrentVirtualmachine(s:Session)= {
         val vmkey = vmAttributeByCounter(s);
         if(s.isAttributeDefined("currentVmId")) {
@@ -108,31 +115,39 @@ object AbiquoAPI {
         }
     }
 
-    val context = JAXBContext.newInstance(classOf[VirtualMachineDto])
-    val factory = XMLInputFactory.newInstance()
-    def readVm(vmcontent:String) : VirtualMachineDto= { context.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(vmcontent))).asInstanceOf[VirtualMachineDto] }
-    def writeVm(vm:VirtualMachineDto) : String      = { val sw = new StringWriter(); context.createMarshaller().marshal(vm, sw); sw.toString() }
+    val factory   = XMLInputFactory.newInstance()
+    val tcontext  = JAXBContext.newInstance(classOf[TasksDto])
+    val vmcontext = JAXBContext.newInstance(classOf[VirtualMachineDto])
+    def readTasks(tcontent:String) : TasksDto   = { tcontext.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(tcontent))).asInstanceOf[TasksDto] }
+    def readVm(vmcontent:String) : VirtualMachineDto= { vmcontext.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(vmcontent))).asInstanceOf[VirtualMachineDto] }
+    def writeVm(vm:VirtualMachineDto) : String      = { val sw = new StringWriter(); vmcontext.createMarshaller().marshal(vm, sw); sw.toString() }
 
     def reconfigureVmBody(s:Session) = {
         val vmcontent = s.getTypedAttribute[String]("currentVmBody")
         val vm = readVm(vmcontent)
-
-        vm.setCpu(2)
-
+        vm.setCpu(vm.getCpu() + 1)
         writeVm(vm)
     }
 
-    def userContent     = Map(  "lusername" -> "${lusername}",
-                                "lusernick" -> "${lusername}",
-                                "desc"      -> "created")
-    def userContentPut  = Map(  "lusername" -> "${lusername}",
-                                "lusernick" -> "${lusername}",
-                                "desc"      -> "modify")
-    def vmtaskContent   = Map(  "force"     -> "true")
-    def vappContent     = Map(  "name"      -> "myVirtualappliance")
-    def vmContent       = Map(  "name"      -> "myVirtualmachine",
-                                "datacenterId"->"${datacenterId}",
-                                "templateId"-> "${templateId}")
+    def reportTasks(s:Session): Session = {
+        if(!s.isAttributeDefined("currentVmTasks")) {
+            LOGREPO.error("can't get vm tasks")
+            return s
+        }
+        val tcontent = s.getTypedAttribute[String]("currentVmTasks")
+        val tasks = readTasks(tcontent)
+
+        import scala.collection.JavaConverters._
+        for(t <- tasks.getCollection().asScala) {
+            for(j <- t.getJobs().getCollection().asScala) {
+                // vm taskId jobId taskType jobType state creation timestamp
+                LOGREPO.info("{}", Array[Object](
+                        t.getOwnerId, t.getTaskId, j.getId, t.getType.name, j.getType.name,
+                        j.getState.name, j.getCreationTimestamp, j.getTimestamp.toString)
+                )
+            }
+        };s
+    }
 
     def deployStartTime(s:Session)  = { s.setAttribute("deployStartTime",   currentTimeMillis) }
     def deployStopTime(s:Session)   = { s.setAttribute("deployStopTime",    currentTimeMillis) }
@@ -181,12 +196,8 @@ object AbiquoAPI {
     }
 
     val baseUrl  = System.getProperty("baseUrl",   "http://localhost:80")
-    val undeploy = System.getProperty("undeploy",  "true") == "true"
-    val delVapp  = System.getProperty("delVapp",   "false")== "true"
     val numUsers = Integer.getInteger("numUsers", 1)
     val rampTime = Integer.getInteger("rampTime", 1).toLong
-    val userLoop = Integer.getInteger("userLoop", 1)
-    val statisticsTime= Integer.getInteger("statisticsTime", 0).toLong
 
     val httpConf = httpConfig.baseURL(baseUrl).disableAutomaticReferer
 }

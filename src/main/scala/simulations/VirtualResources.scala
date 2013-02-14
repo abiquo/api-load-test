@@ -15,6 +15,8 @@ import akka.util.duration._
 
 class VirtualResources extends Simulation {
 
+    val reconfigureChance = 50
+
     val retry    = 5
     val pollPause= 5
 
@@ -26,7 +28,7 @@ class VirtualResources extends Simulation {
     val createVappAndAddVms = tryMax(retry, "createvapp") {
             createVapp
         }
-        .repeat("${numVirtualMachinesInVapp}", "numVm") {
+        .repeat("${numVms}", "numVm") {
             createVmWithRetry
         }
 
@@ -40,34 +42,42 @@ class VirtualResources extends Simulation {
         .asLongAs(s => !isVirtualApplianceState(s, Set("DEPLOYED"))) {
             pause(pollPause)
             .exec(updateVappState)
+            .exec(s => logVirtualApplianceState("waitdeploy", s))
+            .doIf(s => isVirtualApplianceState(s, Set("NOT_DEPLOYED", "NEED_SYNC"))) { // wait "UNKNOWN"
+                exec(s => logVirtualApplianceState("deploy fail", s))
+                .exec(deployVapp)
+            }
         }
-    
+
     val waitVappUndeployed = exec(updateVappState)
-        .asLongAs(s => !isVirtualApplianceState(s, Set("NOT_DEPLOYED", "NOT_ALLOCATED"))) {
+        .asLongAs(s => !isVirtualApplianceState(s, Set("NOT_DEPLOYED"))) {
             pause(pollPause)
             .exec(updateVappState)
+            .exec(s => logVirtualApplianceState("waitundeploy", s))
+            .doIf(s => isVirtualApplianceState(s, Set("DEPLOYED", "NEED_SYNC"))) { // wait "UNKNOWN"
+                exec(s => logVirtualApplianceState("undeploy fail", s))
+                .exec(undeployVapp)
+            }
         }
-    
-    val reconfigureFromGetVm =  exitBlockOnFail {
-	    	exec(updateVmContent)
-	    	.exec(reconfigVm)
-	        //.exec(waitVmStateOff) vm is LOCKED
-    	}
-        
-    val powerOffAndPerhapsReconfigure =
-            exec(powerOffVm)
-            .exec(waitVmStateOff)
-            .randomSwitch(
-                50 -> reconfigureFromGetVm,
-                50 -> updateVmState //XXX do nothing
-            )
 
-    val foreachVmReconfigureChance = repeat("${numVirtualMachinesInVapp}", "numVm") {
+    val reconfigureFromGetVm =  exitBlockOnFail {
+	    	exec(waitVmStateOff)
+            .exec(updateVmContent)
+	        .exec(reconfigVm)
+	        //.exec(waitVmStateOff) wait the vapp
+    	}
+
+    val foreachVm = repeat("${numVms}", "numVm") {
             exec( (s:Session) => setCurrentVmId(s) )
-            .randomSwitch(
-                50 -> powerOffAndPerhapsReconfigure,
-                50 -> updateVmState //XXX do nothing
-            )
+            .doIf("${powerOffVm}", "true") {
+                exec(powerOffVm)
+                .doIf("${reconfigure}", "true") {
+                    randomSwitch(
+                        reconfigureChance -> reconfigureFromGetVm,
+                        0                 -> updateVmState //XXX do nothing
+                    )
+                }
+            }
             .exec( (s:Session) => clearCurrentVmId(s) )
         }
 
@@ -89,51 +99,57 @@ class VirtualResources extends Simulation {
         .exec(s => undeployStopTime(s))
         .exec(s => logVirtualApplianceState("undeploy",s))
 
+    val report = repeat("${numVms}", "numVm") {
+            exec( (s:Session) => setCurrentVmId(s) )
+            .exec(getVmTasks)
+            .exec(s => reportTasks(s))
+            .exec( (s:Session) => clearCurrentVmId(s) )
+        }
+
     val deployVirtualApplianceChain =
-        exec(login)
-        .exitHereIfFailed
-        .exec(createVappAndAddVms)
-        .exitHereIfFailed
-        .exec(deployVappHard)
-        .pause(0, 5)
-        .exec(foreachVmReconfigureChance)
-        .exec(waitVappDeployed) // some LOCKED vms reconfiguring
-        .pause(0, 5)
-        .doIf(undeploy){ // default true
-            undeployVappHard
-        }
-        .doIf(delVapp){ // default false
-          deleteVapp
-        }
-        .exec( s => reportUserLoop(s))
-        .pause(0, 5) // wait before next loop in deployVirtualApplianceChain
-
-    val deployVirtualAppliance = scenario("deployVirtualAppliance")
-            .feed(csv("virtualdatacenter.csv").circular)
-            .repeat(userLoop, "userLoop") {
-                deployVirtualApplianceChain
+        exitBlockOnFail {
+            exec(createVappAndAddVms)
+            .exec(deployVappHard)
+            .repeat("${vappDeployTime}", "deployed") { // pauseCustom ?
+                pause(1)
             }
+            .exec(login)
+            .exec(foreachVm)
+            .exec(waitVappDeployed)
+            .doIfOrElse("${undeployVapp}", "true") {
+                exec(undeployVappHard)
+                .exec(report)
+                .doIf("${deleteVapp}", "true") {
+                    deleteVapp
+                }
+            } {
+                exec(report)
+            }
+            .exec( s => reportUserLoop(s))
+            .exec( stadistics, listByEnterprise)
+            .pause(0, 1) // wait before next loop in deployVirtualApplianceChain
+        }
 
-    val pollStadistics = scenario("pollStadistics")
-            .feed(loginFeed)
-            .doIf(statisticsTime > 0) {
-                during( statisticsTime seconds ) {
-                    login
-                    .exitHereIfFailed
-                    .during( 5 minutes, "stadistics") {
-                        stadistics
-                        .exec(listByEnterprise)
-                        .pause(0, 5)
+    val vdcVappVm = scenario("vdcVappVm")
+            .feed(csv("login.csv").circular)
+            .feed(csv("datacenter.csv").circular)
+            .feed(csv("virtualdatacenter.csv").circular)
+            .feed(csv("virtualmachine.csv").circular)
+            .exec(login)
+            .exitHereIfFailed
+            .repeat("${numVdcs}", "vdcLoop") {
+                exitBlockOnFail {
+                    exec(createVdc)
+                    .repeat("${numVapps}", "vapLoop") {
+                        deployVirtualApplianceChain
+                    }
+                    .doIf("${deleteVdc}", "true") {
+                        deleteVdc
                     }
                 }
             }
 
-
-
-    def apply = {
-        List(
-        deployVirtualAppliance .configure users(numUsers) ramp( rampTime seconds)                  protocolConfig httpConf
-        , pollStadistics       .configure users(60)       delay(rampTime seconds) ramp(1 minutes)  protocolConfig httpConf
-        )
-    }
+	setUp(
+        vdcVappVm users(numUsers) ramp( rampTime seconds)                  protocolConfig httpConf
+	)
 }

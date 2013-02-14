@@ -36,10 +36,8 @@ class CrudUser  extends Simulation {
 				.pause(0, 2) // wait before next loop
 			}
 
-	def apply = {
-        List(
-            write  .configure users(numUsers) ramp( rampTime seconds)                 protocolConfig httpConf
-            , read .configure users(60)       delay(rampTime seconds) ramp(1 minutes) protocolConfig httpConf
-        )
-    }
+	setUp(
+            write users(numUsers) ramp( rampTime seconds)                 protocolConfig httpConf,
+            read  users(60)       delay(rampTime seconds) ramp(1 minutes) protocolConfig httpConf
+	)
 }

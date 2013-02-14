@@ -30,7 +30,5 @@ object SetupInfrastructure extends Simulation {
         .exec(setupInfrastructure)
 
 
-    def apply = {
-        List( setupInfrastructureScenario.configure users 1 protocolConfig httpConf )
-    }
+	setUp(setupInfrastructureScenario users 1 protocolConfig httpConf )
 }

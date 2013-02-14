@@ -26,10 +26,10 @@
 		<appender-ref ref="REPO-FILE" />
 	</logger>
 	<logger name="abiquo" level="DEBUG" />
-	<!-- Uncomment for logging HTTP requests and responses on failure -->
-	<logger name="com.excilys.ebi.gatling.http.ahc.GatlingAsyncHandlerActor" level="DEBUG" /> 
+	<!-- Uncomment for logging HTTP requests and responses on failure
+	<logger name="com.excilys.ebi.gatling.http.ahc.GatlingAsyncHandlerActor" level="DEBUG" /> -->
 	<root>
-		<level value="WARN" />
+		<level value="INFO" />
 		<appender-ref ref="CONSOLE" />
 	</root>
 
