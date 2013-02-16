@@ -22,15 +22,15 @@ $ mvn gatling:execute -Dsimulation=VirtualResources -DbaseUrl=http://10.60.1.223
 
 Each user creates repeat this iteration
 * create a virtual datacenter (''numVdcs'' loop)
-** create a virtual appliance (''numVapps'' loop)
-*** create ''numVms'' virtual machin in the virtual appliance
-*** deploy the virtual appliance and wait until vapp state is DEPLOYED /!\
-*** wait during ''vappDeployTime'' seconds with the vapp in DEPLOYED state
-*** if ''powerOffVm'' power off all the vms
-**** if ''reconfigure'' 50% chance to increment the CPU of each vm
-*** if ''undeployVapp'' undeploy the virtual appliance and wait until vapp state is NOT_DEPLOYED /!\
-**** if ''deleteVapp'' deletes the vapp
-** if ''deleteVdc'' deletes the vdc
+* create a virtual appliance (''numVapps'' loop)
+* create ''numVms'' virtual machin in the virtual appliance
+* deploy the virtual appliance and wait until vapp state is DEPLOYED /!\
+* wait during ''vappDeployTime'' seconds with the vapp in DEPLOYED state
+* if ''powerOffVm'' power off all the vms
+* if ''reconfigure'' 50% chance to increment the CPU of each vm
+* if ''undeployVapp'' undeploy the virtual appliance and wait until vapp state is NOT_DEPLOYED /!\
+* if ''deleteVapp'' deletes the vapp
+* if ''deleteVdc'' deletes the vdc
 
 /!\ *NOTE* if _NEED_SYNCH_ will try to repeat the action, but for _UNKNOWN_ will wait
 
@@ -39,28 +39,28 @@ Configuration
 -------------
 Users are configured reading a line of each of the follow file sequentially and circular
 
-* *data/login.csv*
-** loginuser
-** loginpassword
+*data/login.csv*
+* loginuser
+* loginpassword
 
-* *data/datacenter.csv* : Required setup. Check this configuration is OK in the abiquo API before running the simulation.
-** datacenterId
-** hypervisorType
-** templateId
+*data/datacenter.csv* : Required setup. Check this configuration is OK in the abiquo API before running the simulation.
+* datacenterId
+* hypervisorType
+* templateId
 *NOTE*: it is important to check _templateId_ is *compatible* with _hypervisorType_.
 
-* *data/virtualdatacenter.csv* : Define the number of iterations
+*data/virtualdatacenter.csv* : Define the number of iterations
 ** numVdcs
 ** numVapps
 ** numVms
 
-* *data/virtualmachine.csv*
-** vappDeployTime
-** powerOffVm
-** reconfigure
-** undeployVapp
-** deleteVapp
-** deleteVdc
+*data/virtualmachine.csv*
+* vappDeployTime
+* powerOffVm
+* reconfigure
+* undeployVapp
+* deleteVapp
+* deleteVdc
 
 Output
 ------
