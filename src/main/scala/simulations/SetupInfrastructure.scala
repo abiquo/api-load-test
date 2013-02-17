@@ -8,27 +8,19 @@ import com.excilys.ebi.gatling.http.request.builder.AbstractHttpRequestWithBodyB
 import bootstrap._
 
 object SetupInfrastructure extends Simulation {
-
     //Create a Datacenter a Rack a Machine and refresh the DatacenterRepository
     //sets $datacenterId, $rackId, $machineId, $templateId
     val setupInfrastructure =
-        exec(createConfDatacenter)
-        .exitHereIfFailed
-        .exec(createConfRack)
-        .exitHereIfFailed
-        .exec(createConfMachine)
-        .exitHereIfFailed
-        .exec(refreshRepository)
-        .exitHereIfFailed
-        .pause(5) // wait for AM notifications to populate the VirtualMachineTemplates
-
+        exitBlockOnFail {
+            exec(login)
+            .exec(createConfDatacenter, createConfRack, createConfMachine, refreshRepository)
+            .pause(5) // wait for AM notifications to populate the VirtualMachineTemplates
+        }
 
     val setupInfrastructureScenario = scenario("initInfrastructure")
-        .feed(loginFeed)
-        .exec(login)
+        .feed(csv("login.csv"))
         .feed(csv("infrastructure.csv"))
         .exec(setupInfrastructure)
-
 
 	setUp(setupInfrastructureScenario users 1 protocolConfig httpConf )
 }

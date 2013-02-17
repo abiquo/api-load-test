@@ -21,16 +21,17 @@
 		</encoder>
     </appender>
 
-	<logger name="repo">
-		<level value="INFO" />
+	<logger name="repo" level="INFO">
 		<appender-ref ref="REPO-FILE" />
 	</logger>
 	<logger name="abiquo" level="DEBUG" />
-	<!-- Uncomment for logging HTTP requests and responses on failure
-	<logger name="com.excilys.ebi.gatling.http.ahc.GatlingAsyncHandlerActor" level="DEBUG" /> -->
+	<!-- DEBUG for logging ONLY FAILED HTTP request and responses -->
+	<!-- TRACE for logging ALL HTTP request and responses -->
+	<logger name="com.excilys.ebi.gatling.http" level="DEBUG" />
+	<logger name="com.excilys.ebi.gatling.core.action" level="WARN" />
+	<logger name="com.excilys.ebi.gatling.http.action" level="WARN" />
 	<root>
 		<level value="INFO" />
 		<appender-ref ref="CONSOLE" />
 	</root>
-
 </configuration>

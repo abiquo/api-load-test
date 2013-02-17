@@ -118,11 +118,15 @@ object AbiquoAPI {
     val factory   = XMLInputFactory.newInstance()
     val tcontext  = JAXBContext.newInstance(classOf[TasksDto])
     val vmcontext = JAXBContext.newInstance(classOf[VirtualMachineDto])
-    def readTasks(tcontent:String) : TasksDto   = { tcontext.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(tcontent))).asInstanceOf[TasksDto] }
+    def readTasks(tcontent:String) : TasksDto       = { tcontext.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(tcontent))).asInstanceOf[TasksDto] }
     def readVm(vmcontent:String) : VirtualMachineDto= { vmcontext.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(vmcontent))).asInstanceOf[VirtualMachineDto] }
     def writeVm(vm:VirtualMachineDto) : String      = { val sw = new StringWriter(); vmcontext.createMarshaller().marshal(vm, sw); sw.toString() }
 
-    def reconfigureVmBody(s:Session) = {
+    def reconfigureVmBody(s:Session): String = {
+        if(!s.isAttributeDefined("currentVmBody")) {
+            printSession(s)
+            return "failed-currentVmBody"
+        }
         val vmcontent = s.getTypedAttribute[String]("currentVmBody")
         val vm = readVm(vmcontent)
         vm.setCpu(vm.getCpu() + 1)
@@ -140,10 +144,10 @@ object AbiquoAPI {
         import scala.collection.JavaConverters._
         for(t <- tasks.getCollection().asScala) {
             for(j <- t.getJobs().getCollection().asScala) {
-                // vm taskId jobId taskType jobType state creation timestamp
+                // vm taskType jobType - state creation timestamp
                 LOGREPO.info("{}", Array[Object](
-                        t.getOwnerId, t.getTaskId, j.getId, t.getType.name, j.getType.name,
-                        j.getState.name, j.getCreationTimestamp, j.getTimestamp.toString)
+                        t.getOwnerId, t.getType.name, j.getType.name,
+                        j.getState.name, j.getTimestamp.toString, j.getCreationTimestamp)
                 )
             }
         };s
@@ -160,8 +164,6 @@ object AbiquoAPI {
     def isVirtualMachineState(s:Session, states:Set[String]) = {
         s.isAttributeDefined("currentVmState")  && states.contains(s.getTypedAttribute[String]("currentVmState"))
     }
-
-    def loginFeed = Array(Map("loginuser" -> "admin", "loginpassword" -> "xabiquo")).circular
 
     def reportUserLoop(s:Session) = {
         if(s.isAttributeDefined("virtualApplianceState") && s.isAttributeDefined("undeployStopTime"))  {
@@ -183,15 +185,18 @@ object AbiquoAPI {
     def logVirtualApplianceState(msg:String, s:Session) = {
         if(s.isAttributeDefined("virtualApplianceState") &&
             !s.getTypedAttribute[String]("virtualApplianceState").startsWith("LOCKED")) {
-            LOG.debug(msg + "\tvapp {}\t{} {}",
+            LOG.debug("vapp {} {} {}", msg,
             s.getTypedAttribute[String]("virtualapplianceId"),
-            s.getTypedAttribute[String]("virtualApplianceState"), "");
+            s.getTypedAttribute[String]("virtualApplianceState"));
         }; s
     }
 
-    def logVmState(s:Session) = {
-        if(s.isAttributeDefined("currentVmState")) {
-            LOG.info("fucking vm is in state {} ", s.getTypedAttribute[String]("currentVmState"));
+    def logVmState(msg:String, s:Session) = {
+        if(s.isAttributeDefined("currentVmState") &&
+            !s.getTypedAttribute[String]("currentVmState").startsWith("LOCKED")) {
+            LOG.debug("vm {} {}  {} ", msg,
+            s.getTypedAttribute[String]("currentVmId"),
+            s.getTypedAttribute[String]("currentVmState"));
         }; s
     }
 

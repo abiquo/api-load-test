@@ -19,21 +19,19 @@ class CrudUser  extends Simulation {
 		.exec(getNoUser)
 
 	val write = scenario("crudUser")
-			.feed(loginFeed)
+			.feed(csv("login.csv"))
 			.exec(login)
 			.feed(csv("users.csv").circular)
 			.during(duration) {
 			//.repeat(100) {
 				crudUser
-				.pause(0, 2) // wait before next loop
 			}
 
 	val read = scenario("readUsers")
-			.feed(loginFeed)
+			.feed(csv("login.csv"))
 			.exec(login)
 			.during(duration) {
 				getUsers
-				.pause(0, 2) // wait before next loop
 			}
 
 	setUp(

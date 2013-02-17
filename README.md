@@ -47,7 +47,7 @@ Users are configured reading a line of each of the follow file sequentially and 
 * datacenterId
 * hypervisorType
 * templateId
- 
+
 *NOTE*: it is important to check _templateId_ is *compatible* with _hypervisorType_.
 
 *data/virtualdatacenter.csv* : Define the number of iterations
@@ -75,4 +75,4 @@ At the end of each deploy/undeploy prints iteration numbers
 * *undeployMs* time from DEPLOYED to NOT_DEPLOYED/UNKNOWN
 
 and a summary of all the virtual machine jobs:
-* vm taskId jobId taskType jobType state creation timestamp
+* vm taskType jobType state creation timestamp
