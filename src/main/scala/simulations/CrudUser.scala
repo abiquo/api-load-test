@@ -18,8 +18,10 @@ class CrudUser  extends Simulation {
 		.exec(delUser)
 		.exec(getNoUser)
 
+	val loginFeed = csv("login.csv").circular
+
 	val write = scenario("crudUser")
-			.feed(csv("login.csv"))
+			.feed(loginFeed)
 			.exec(login)
 			.feed(csv("users.csv").circular)
 			.during(duration) {
@@ -28,7 +30,7 @@ class CrudUser  extends Simulation {
 			}
 
 	val read = scenario("readUsers")
-			.feed(csv("login.csv"))
+			.feed(loginFeed)
 			.exec(login)
 			.during(duration) {
 				getUsers

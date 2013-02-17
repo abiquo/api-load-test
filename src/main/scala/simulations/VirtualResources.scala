@@ -31,34 +31,43 @@ class VirtualResources extends Simulation {
         }
 
     val foreachVmHeplDeploy = repeat("${numVms}", "numVm") {
-            exec( (s:Session) => setCurrentVmId(s) )
+            exec( s => setCurrentVmId(s) )
             .exec(updateVmState)
-            .exec(s => logVmState("wait deploy", s))
-            .doIf(s => isVirtualMachineState(s, Set("NOT_ALLOCATED"))) {
+            .doIf(s => !isVirtualMachineState(s, Set("ON"))) {
                 exec(s => logVmState("deploy fail", s))
+            }
+            .doIf(s => isVirtualMachineState(s, Set("NOT_ALLOCATED"))) {
                 exec(deployVm)
             }
-            .exec( (s:Session) => clearCurrentVmId(s) )
+            .doIf(s => isVirtualMachineState(s, Set("OFF"))) {
+                exec(powerOnVm)
+            }
+            .exec( s => clearCurrentVmId(s) )
         }
 
     val foreachVmHeplUndeploy = repeat("${numVms}", "numVm") {
-            exec( (s:Session) => setCurrentVmId(s) )
+            exec( s => setCurrentVmId(s) )
             .exec(updateVmState)
-            .exec(s => logVmState("wait undeploy", s))
-            .doIf(s => isVirtualMachineState(s, Set("ON", "OFF"))) {
+            .doIf(s => !isVirtualMachineState(s, Set("NOT_ALLOCATED"))) {
                 exec(s => logVmState("undeploy fail", s))
+            }
+            .doIf(s => isVirtualMachineState(s, Set("ON"))) {
+                exec(powerOffVm)
+            }
+            .doIf(s => isVirtualMachineState(s, Set("OFF"))) {
                 exec(undeployVm)
             }
-            .exec( (s:Session) => clearCurrentVmId(s) )
+            .exec( s => clearCurrentVmId(s) )
         }
 
     val waitVappDeployed = exec(updateVappState).asLongAs(s => !isVirtualApplianceState(s, Set("DEPLOYED"))) {
             pause(pollPause)
             .exec(updateVappState)
             .exec(s => logVirtualApplianceState("wait deploy", s))
-            .doIf(s => isVirtualApplianceState(s, Set("NOT_DEPLOYED", "NEED_SYNC"))) { // wait "UNKNOWN"
+            .doIf(s => isVirtualApplianceState(s, Set("NOT_DEPLOYED", "NEEDS_SYNC"))) { // wait "UNKNOWN"
                 exec(s => logVirtualApplianceState("deploy fail", s))
                 .exec(foreachVmHeplDeploy)
+                .exec(updateVappState)
             }
         }
 
@@ -66,9 +75,10 @@ class VirtualResources extends Simulation {
             pause(pollPause)
             .exec(updateVappState)
             .exec(s => logVirtualApplianceState("wait undeploy", s))
-            .doIf(s => isVirtualApplianceState(s, Set("DEPLOYED", "NEED_SYNC"))) { // wait "UNKNOWN"
+            .doIf(s => isVirtualApplianceState(s, Set("DEPLOYED", "NEEDS_SYNC"))) { // wait "UNKNOWN"
                 exec(s => logVirtualApplianceState("undeploy fail", s))
                 .exec(foreachVmHeplUndeploy)
+                .exec(updateVappState)
             }
         }
 
@@ -79,7 +89,7 @@ class VirtualResources extends Simulation {
     	}
 
     val foreachVm = repeat("${numVms}", "numVm") {
-            exec( (s:Session) => setCurrentVmId(s) )
+            exec( s => setCurrentVmId(s) )
             .doIf("${powerOffVm}", "true") {
                 tryMax(retry) {
                     exec(powerOffVm)
@@ -91,30 +101,30 @@ class VirtualResources extends Simulation {
                     )
                 }
             }
-            .exec( (s:Session) => clearCurrentVmId(s) )
+            .exec( s => clearCurrentVmId(s) )
         } // wait the vapp state
 
-    val deployVappHard = tryMax(retry) {
+    val deployVappHard =
             exec(s => deployStartTime(s))
             .exec(deployVapp)
             .exec(waitVappDeployed)
             .exec(s => deployStopTime(s))
             .exec(s => logVirtualApplianceState("deploy", s))
-        }
 
-    val undeployVappHard = tryMax(retry) {
+
+    val undeployVappHard =
             exec(s =>  undeployStartTime(s))
             .exec(undeployVapp)
             .exec(waitVappUndeployed)
             .exec(s => undeployStopTime(s))
-            .exec(s => logVirtualApplianceState("undeploy",s))
-        }
+            .exec(s => logVirtualApplianceState("undeploy", s))
+
 
     val report = repeat("${numVms}", "numVm") {
-            exec( (s:Session) => setCurrentVmId(s) )
+            exec( s => setCurrentVmId(s) )
             .exec(getVmTasks)
             .exec(s => reportTasks(s))
-            .exec( (s:Session) => clearCurrentVmId(s) )
+            .exec( s => clearCurrentVmId(s) )
         }
 
     val createVappAndAddVms = exitBlockOnFail {
@@ -135,10 +145,8 @@ class VirtualResources extends Simulation {
             .repeat("${vappDeployTime}", "deployed") { // pauseCustom ?
                 pause(1)
             }
-            .exec(login)
             .exec(foreachVm)
             .exec(waitVappDeployed)
-            .exec(login)
             .doIfOrElse("${undeployVapp}", "true") {
                 exec(undeployVappHard)
                 .exec(report)
@@ -150,9 +158,8 @@ class VirtualResources extends Simulation {
             } {
                 exec(report)
             }
-            .exec( s => reportUserLoop(s))
+            .exec( s => reportUserLoop(s) )
             .exec( stadistics, listByEnterprise)
-            .pause(0, 1) // wait before next loop in deployVirtualApplianceChain
         }
 
     val vdcVappVm = scenario("vdcVappVm")
