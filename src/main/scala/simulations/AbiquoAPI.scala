@@ -85,27 +85,27 @@ object AbiquoAPI {
     val VM_DEPLOY   = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/action/deploy"
     val VM_UNDEPLOY = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/action/undeploy"
 
-    def captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("currentVmId")
-    def captureCurrentVirtualmachine   = bodyString.saveAs("currentVmBody")
-    def captureCurrentVirtualmachineTasks= bodyString.saveAs("currentVmTasks")
-    def captureDatacenterId            = regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId")
-    def captureTemplateId              = regex("""virtualmachinetemplates/(\d+)""") find(0) saveAs("templateId")
-    def captureEnterpriseId            = regex("""enterprises/(\d+)/users/""") find(0) saveAs("enterpriseId")
-    def captureUserId                  = regex("""users/(\d+)""") find(0) saveAs("currentUserId")
-    def captureLuserId                 = regex("""users/(\d+)""") find(0) saveAs("luserId")
-    def checkLuserId                   = regex("""users/${luserId}""") find(0) exists
-    def captureRackId                  = regex("""racks/(\d+)""") find(0) saveAs("rackId")
-    def captureMachineId               = regex("""machines/(\d+)""") find(0) saveAs("machineId")
-    def captureErrors(exec:String)     = xpath("""/errors/error/code""").findAll.notExists.saveAs("error-"+exec)
-    def captureVirtualapplianceState   = xpath("""/virtualApplianceState/power""").find.exists.saveAs("virtualApplianceState")
-    def captureVirtualapplianceId      = regex("""virtualappliances/(\d+)/""").find.exists.saveAs("virtualapplianceId")
-    def captureCurrentVmState          = xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")
-    def captureVirtualDatacenterId     = regex("""virtualdatacenters/(\d+)/""").find.exists.saveAs("virtualdatacenterId")
+    val captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("currentVmId")
+    val captureCurrentVirtualmachine   = bodyString.saveAs("currentVmBody")
+    val captureCurrentVirtualmachineTasks= bodyString.saveAs("currentVmTasks")
+    val captureDatacenterId            = regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId")
+    val captureTemplateId              = regex("""virtualmachinetemplates/(\d+)""") find(0) saveAs("templateId")
+    val captureEnterpriseId            = regex("""enterprises/(\d+)/users/""") find(0) saveAs("enterpriseId")
+    val captureUserId                  = regex("""users/(\d+)""") find(0) saveAs("currentUserId")
+    val captureLuserId                 = regex("""users/(\d+)""") find(0) saveAs("luserId")
+    val checkLuserId                   = regex("""users/${luserId}""") find(0) exists
+    val captureRackId                  = regex("""racks/(\d+)""") find(0) saveAs("rackId")
+    val captureMachineId               = regex("""machines/(\d+)""") find(0) saveAs("machineId")
+    val captureErrors:String=>HttpCheck[_] = exec => xpath("""/errors/error/code""").findAll.notExists.saveAs("error-"+exec)
+    val captureVirtualapplianceState   = xpath("""/virtualApplianceState/power""").find.exists.saveAs("virtualApplianceState")
+    val captureVirtualapplianceId      = regex("""virtualappliances/(\d+)/""").find.exists.saveAs("virtualapplianceId")
+    val captureCurrentVmState          = xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")
+    val captureVirtualDatacenterId     = regex("""virtualdatacenters/(\d+)/""").find.exists.saveAs("virtualdatacenterId")
 
-    def vmAttributeByCounter(s:Session)     = { "virtualmachine-" + s.getTypedAttribute[String]("numVm") }
-    def setCurrentVmId(s:Session)           = { s.setAttribute("currentVmId", s.getTypedAttribute[String](vmAttributeByCounter(s)+"-id")) }
-    def clearCurrentVmId(s:Session)			= { s.removeAttribute("currentVmId").removeAttribute("currentVmState").removeAttribute("currentVmBody").removeAttribute("currentVmTasks")}
-    def saveCurrentVirtualmachine(s:Session)= {
+    val vmAttributeByCounter:Session => String  = s => { "virtualmachine-" + s.getTypedAttribute[String]("numVm") }
+    val setCurrentVmId:Session => Session       = s => s.setAttribute("currentVmId", s.getTypedAttribute[String](vmAttributeByCounter(s)+"-id"))
+    val clearCurrentVmId:Session => Session     = s => s.removeAttribute("currentVmId").removeAttribute("currentVmState").removeAttribute("currentVmBody").removeAttribute("currentVmTasks")
+    val saveCurrentVirtualmachine:Session => Session = s => {
         val vmkey = vmAttributeByCounter(s);
         if(s.isAttributeDefined("currentVmId")) {
             s.setAttribute(vmkey+"-id",      s.getTypedAttribute[Int]("currentVmId"))
@@ -122,50 +122,51 @@ object AbiquoAPI {
     def readVm(vmcontent:String) : VirtualMachineDto= { vmcontext.createUnmarshaller().unmarshal(factory.createXMLStreamReader(new StringReader(vmcontent))).asInstanceOf[VirtualMachineDto] }
     def writeVm(vm:VirtualMachineDto) : String      = { val sw = new StringWriter(); vmcontext.createMarshaller().marshal(vm, sw); sw.toString() }
 
-    def reconfigureVmBody(s:Session): String = {
+    val reconfigureVmBody:Session => String = s => {
         if(!s.isAttributeDefined("currentVmBody")) {
             printSession(s)
-            return "failed-currentVmBody"
+            "failed-currentVmBody"
+        } else {
+            val vmcontent = s.getTypedAttribute[String]("currentVmBody")
+            val vm = readVm(vmcontent)
+            vm.setCpu(vm.getCpu() + 1)
+            writeVm(vm)
         }
-        val vmcontent = s.getTypedAttribute[String]("currentVmBody")
-        val vm = readVm(vmcontent)
-        vm.setCpu(vm.getCpu() + 1)
-        writeVm(vm)
     }
 
-    def reportTasks(s:Session): Session = {
+    val reportTasks:Session => Session = s => {
         if(!s.isAttributeDefined("currentVmTasks")) {
-            LOGREPO.error("can't get vm tasks")
-            return s
-        }
-        val tcontent = s.getTypedAttribute[String]("currentVmTasks")
-        val tasks = readTasks(tcontent)
+            LOGREPO.error("can't get vm tasks"); s
+        } else {
+            val tcontent = s.getTypedAttribute[String]("currentVmTasks")
+            val tasks = readTasks(tcontent)
 
-        import scala.collection.JavaConverters._
-        for(t <- tasks.getCollection().asScala) {
-            for(j <- t.getJobs().getCollection().asScala) {
-                // vm taskType jobType - state creation timestamp
-                LOGREPO.info("{}", Array[Object](
-                        t.getOwnerId, t.getType.name, j.getType.name,
-                        j.getState.name, j.getTimestamp.toString, j.getCreationTimestamp)
-                )
-            }
-        };s
+            import scala.collection.JavaConverters._
+            for(t <- tasks.getCollection().asScala) {
+                for(j <- t.getJobs().getCollection().asScala) {
+                    // vm taskType jobType - state creation timestamp
+                    LOGREPO.info("{}", Array[Object](
+                            t.getOwnerId, t.getType.name, j.getType.name,
+                            j.getState.name, j.getTimestamp.toString, j.getCreationTimestamp)
+                    )
+                }
+            };s
+        }
     }
 
-    def deployStartTime(s:Session)  = { s.setAttribute("deployStartTime",   currentTimeMillis) }
-    def deployStopTime(s:Session)   = { s.setAttribute("deployStopTime",    currentTimeMillis) }
-    def undeployStartTime(s:Session)= { s.setAttribute("undeployStartTime", currentTimeMillis) }
-    def undeployStopTime(s:Session) = { s.setAttribute("undeployStopTime",  currentTimeMillis) }
+    val deployStartTime:Session => Session   = s => s.setAttribute("deployStartTime",   currentTimeMillis)
+    val deployStopTime:Session => Session    = s => s.setAttribute("deployStopTime",    currentTimeMillis)
+    val undeployStartTime:Session => Session = s => s.setAttribute("undeployStartTime", currentTimeMillis)
+    val undeployStopTime:Session => Session  = s => s.setAttribute("undeployStopTime",  currentTimeMillis)
 
-    def isVirtualApplianceState(s:Session, states:Set[String]) = {
+    val isVirtualApplianceState:(Set[String], Session) => Boolean = (states, s) => {
         s.isAttributeDefined("virtualApplianceState")  && states.contains(s.getTypedAttribute[String]("virtualApplianceState"))
     }
-    def isVirtualMachineState(s:Session, states:Set[String]) = {
+    val isVirtualMachineState:(Set[String], Session) => Boolean = (states, s) => {
         s.isAttributeDefined("currentVmState")  && states.contains(s.getTypedAttribute[String]("currentVmState"))
     }
 
-    def reportUserLoop(s:Session) = {
+    val reportUserLoop:Session => Session = s => {
         if(s.isAttributeDefined("virtualApplianceState") && s.isAttributeDefined("undeployStopTime"))  {
             LOGREPO.info("vapp {}\t deployMs {}\t undeployMs {}",
                 s.getTypedAttribute[String]("virtualapplianceId"),
@@ -178,11 +179,11 @@ object AbiquoAPI {
         s.removeAttribute("virtualApplianceState")
     }
 
-    def printSession(s:Session) = {
+    val printSession:Session => Session = s => {
         LOG.info("{}",s); s
     }
 
-    def logVirtualApplianceState(msg:String, s:Session) = {
+    val logVirtualApplianceState:(String,Session) => Session = (msg,s) => {
         if(s.isAttributeDefined("virtualApplianceState") &&
             !s.getTypedAttribute[String]("virtualApplianceState").startsWith("LOCKED")) {
             LOG.debug("vapp {} {} {}", msg,
@@ -191,7 +192,7 @@ object AbiquoAPI {
         }; s
     }
 
-    def logVmState(msg:String, s:Session) = {
+    val logVmState:(String,Session) => Session = (msg,s) => {
         if(s.isAttributeDefined("currentVmState") &&
             !s.getTypedAttribute[String]("currentVmState").startsWith("LOCKED")) {
             LOG.debug("vm {} {}  {} ", msg,
