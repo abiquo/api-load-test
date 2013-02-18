@@ -159,12 +159,19 @@ object AbiquoAPI {
     val undeployStartTime:Session => Session = s => s.setAttribute("undeployStartTime", currentTimeMillis)
     val undeployStopTime:Session => Session  = s => s.setAttribute("undeployStopTime",  currentTimeMillis)
 
-    val isVirtualApplianceState:(Set[String], Session) => Boolean = (states, s) => {
-        s.isAttributeDefined("virtualApplianceState")  && states.contains(s.getTypedAttribute[String]("virtualApplianceState"))
+    def isVirtualApplianceStateC(states:Set[String])(n:Boolean)(s:Session):Boolean = {
+        val c = s.isAttributeDefined("virtualApplianceState")  && states.contains(s.getTypedAttribute[String]("virtualApplianceState"))
+        if(n){c}else{!c}
     }
-    val isVirtualMachineState:(Set[String], Session) => Boolean = (states, s) => {
-        s.isAttributeDefined("currentVmState")  && states.contains(s.getTypedAttribute[String]("currentVmState"))
+    def isVirtualMachineStateC(states:Set[String])(n:Boolean)(s:Session):Boolean = {
+        val c = s.isAttributeDefined("currentVmState")  && states.contains(s.getTypedAttribute[String]("currentVmState"))
+        if(n){c}else{!c}
     }
+
+    val isVirtualApplianceState:(Set[String]) => (Session) => (Boolean) = (states) => isVirtualApplianceStateC(states)(true)
+    val isNotVirtualApplianceState:(Set[String]) => (Session) => (Boolean) = (states) => isVirtualApplianceStateC(states)(false)
+    val isVirtualMachineState:(Set[String]) => (Session) => (Boolean) = (states) => isVirtualMachineStateC(states)(true)
+    val isNotVirtualMachineState:(Set[String]) => (Session) => (Boolean) = (states) => isVirtualMachineStateC(states)(false)
 
     val reportUserLoop:Session => Session = s => {
         if(s.isAttributeDefined("virtualApplianceState") && s.isAttributeDefined("undeployStopTime"))  {
@@ -183,7 +190,7 @@ object AbiquoAPI {
         LOG.info("{}",s); s
     }
 
-    val logVirtualApplianceState:(String,Session) => Session = (msg,s) => {
+    def logVirtualApplianceStateC(msg:String)(s:Session) = {
         if(s.isAttributeDefined("virtualApplianceState") &&
             !s.getTypedAttribute[String]("virtualApplianceState").startsWith("LOCKED")) {
             LOG.debug("vapp {} {} {}", msg,
@@ -192,7 +199,7 @@ object AbiquoAPI {
         }; s
     }
 
-    val logVmState:(String,Session) => Session = (msg,s) => {
+    def logVmStateC(msg:String)(s:Session):Session = {
         if(s.isAttributeDefined("currentVmState") &&
             !s.getTypedAttribute[String]("currentVmState").startsWith("LOCKED")) {
             LOG.debug("vm {} {}  {} ", msg,
@@ -200,6 +207,10 @@ object AbiquoAPI {
             s.getTypedAttribute[String]("currentVmState"));
         }; s
     }
+
+    val logVmState:String => Session => Session = msg => logVmStateC(msg)
+    val logVirtualApplianceState:String => Session => Session = msg => logVirtualApplianceStateC(msg)
+
 
     val baseUrl  = System.getProperty("baseUrl",   "http://localhost:80")
     val numUsers = Integer.getInteger("numUsers", 1)
