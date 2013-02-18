@@ -105,7 +105,7 @@ object AbiquoAPI {
     val vmAttributeByCounter:Session => String  = s => { "virtualmachine-" + s.getTypedAttribute[String]("numVm") }
     val setCurrentVmId:Session => Session       = s => s.setAttribute("currentVmId", s.getTypedAttribute[String](vmAttributeByCounter(s)+"-id"))
     val clearCurrentVmId:Session => Session     = s => s.removeAttribute("currentVmId").removeAttribute("currentVmState").removeAttribute("currentVmBody").removeAttribute("currentVmTasks")
-    val saveCurrentVirtualmachine:Session => Session = s => {
+    val saveCurrentVmId:Session => Session = s => {
         val vmkey = vmAttributeByCounter(s);
         if(s.isAttributeDefined("currentVmId")) {
             s.setAttribute(vmkey+"-id",      s.getTypedAttribute[Int]("currentVmId"))
@@ -154,24 +154,24 @@ object AbiquoAPI {
         }
     }
 
-    val deployStartTime:Session => Session   = s => s.setAttribute("deployStartTime",   currentTimeMillis)
-    val deployStopTime:Session => Session    = s => s.setAttribute("deployStopTime",    currentTimeMillis)
-    val undeployStartTime:Session => Session = s => s.setAttribute("undeployStartTime", currentTimeMillis)
-    val undeployStopTime:Session => Session  = s => s.setAttribute("undeployStopTime",  currentTimeMillis)
+    val deployStartTime:Session  => Session = s => s.setAttribute("deployStartTime",   currentTimeMillis)
+    val deployStopTime:Session   => Session = s => s.setAttribute("deployStopTime",    currentTimeMillis)
+    val undeployStartTime:Session=> Session = s => s.setAttribute("undeployStartTime", currentTimeMillis)
+    val undeployStopTime:Session => Session = s => s.setAttribute("undeployStopTime",  currentTimeMillis)
 
-    def isVirtualApplianceStateC(states:Set[String])(n:Boolean)(s:Session):Boolean = {
+    def isVirtualApplianceState(states:Set[String])(n:Boolean)(s:Session):Boolean = {
         val c = s.isAttributeDefined("virtualApplianceState")  && states.contains(s.getTypedAttribute[String]("virtualApplianceState"))
         if(n){c}else{!c}
     }
-    def isVirtualMachineStateC(states:Set[String])(n:Boolean)(s:Session):Boolean = {
+    def isVirtualMachineState(states:Set[String])(n:Boolean)(s:Session):Boolean = {
         val c = s.isAttributeDefined("currentVmState")  && states.contains(s.getTypedAttribute[String]("currentVmState"))
         if(n){c}else{!c}
     }
 
-    val isVirtualApplianceState:(Set[String]) => (Session) => (Boolean) = (states) => isVirtualApplianceStateC(states)(true)
-    val isNotVirtualApplianceState:(Set[String]) => (Session) => (Boolean) = (states) => isVirtualApplianceStateC(states)(false)
-    val isVirtualMachineState:(Set[String]) => (Session) => (Boolean) = (states) => isVirtualMachineStateC(states)(true)
-    val isNotVirtualMachineState:(Set[String]) => (Session) => (Boolean) = (states) => isVirtualMachineStateC(states)(false)
+    val isVappState:(String*)   => (Session) => (Boolean) = (states) => isVirtualApplianceState(states.toSet)(true)
+    val isNotVappState:(String*)=> (Session) => (Boolean) = (states) => isVirtualApplianceState(states.toSet)(false)
+    val isVmState:(String*)     => (Session) => (Boolean) = (states) => isVirtualMachineState(states.toSet)(true)
+    val isNotVmState:(String*)  => (Session) => (Boolean) = (states) => isVirtualMachineState(states.toSet)(false)
 
     val reportUserLoop:Session => Session = s => {
         if(s.isAttributeDefined("virtualApplianceState") && s.isAttributeDefined("undeployStopTime"))  {
@@ -208,8 +208,8 @@ object AbiquoAPI {
         }; s
     }
 
-    val logVmState:String => Session => Session = msg => logVmStateC(msg)
-    val logVirtualApplianceState:String => Session => Session = msg => logVirtualApplianceStateC(msg)
+    val logVmState:String  => Session => Session = msg => logVmStateC(msg)
+    val logVappState:String=> Session => Session = msg => logVirtualApplianceStateC(msg)
 
 
     val baseUrl  = System.getProperty("baseUrl",   "http://localhost:80")
