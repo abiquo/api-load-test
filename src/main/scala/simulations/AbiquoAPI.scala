@@ -3,10 +3,12 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import com.excilys.ebi.gatling.core.Predef._
 import com.excilys.ebi.gatling.core.session.Session
+import com.excilys.ebi.gatling.core.session.{ EvaluatableString, Session }
+import com.excilys.ebi.gatling.core.structure.ChainBuilder
 import com.excilys.ebi.gatling.http.Predef._
 import com.excilys.ebi.gatling.http.Headers.Names._
 import com.excilys.ebi.gatling.http.check.HttpCheck
-import com.excilys.ebi.gatling.core.session.{ EvaluatableString, Session }
+
 
 import javax.xml.bind.JAXBContext
 import javax.xml.stream.XMLInputFactory
@@ -15,6 +17,9 @@ import java.io.StringWriter
 
 import com.abiquo.server.core.cloud.VirtualMachineDto
 import com.abiquo.server.core.task.TasksDto
+
+import bootstrap._
+
 
 object AbiquoAPI {
     val ABQ_VERSION = """; version=2.4 """
@@ -85,7 +90,7 @@ object AbiquoAPI {
     val VM_DEPLOY   = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/action/deploy"
     val VM_UNDEPLOY = "/api/cloud/virtualdatacenters/${virtualdatacenterId}/virtualappliances/${virtualapplianceId}/virtualmachines/${currentVmId}/action/undeploy"
 
-    val captureCurrentVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("currentVmId")
+    val captureCreatedVirtualmachineId = regex("""virtualmachines/(\d+)/""").find.exists.saveAs("createdVmId")
     val captureCurrentVirtualmachine   = bodyString.saveAs("currentVmBody")
     val captureCurrentVirtualmachineTasks= bodyString.saveAs("currentVmTasks")
     val captureDatacenterId            = regex("""datacenters/(\d+)""") find(0) saveAs("datacenterId")
@@ -102,17 +107,25 @@ object AbiquoAPI {
     val captureCurrentVmState          = xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")
     val captureVirtualDatacenterId     = regex("""virtualdatacenters/(\d+)/""").find.exists.saveAs("virtualdatacenterId")
 
-    val vmAttributeByCounter:Session => String  = s => { "virtualmachine-" + s.getTypedAttribute[String]("numVm") }
-    val setCurrentVmId:Session => Session       = s => s.setAttribute("currentVmId", s.getTypedAttribute[String](vmAttributeByCounter(s)+"-id"))
-    val clearCurrentVmId:Session => Session     = s => s.removeAttribute("currentVmId").removeAttribute("currentVmState").removeAttribute("currentVmBody").removeAttribute("currentVmTasks")
-    val saveCurrentVmId:Session => Session = s => {
-        val vmkey = vmAttributeByCounter(s);
-        if(s.isAttributeDefined("currentVmId")) {
-            s.setAttribute(vmkey+"-id",      s.getTypedAttribute[Int]("currentVmId"))
+    val saveCreatedVm:Session => Session = s => {
+        if(s.isAttributeDefined("createdVmId")) {
+            val createdVmId = s.getTypedAttribute[String]("createdVmId");
+            if(!s.isAttributeDefined("vms")) {
+                s.setAttribute("vms", List(createdVmId) ).removeAttribute("createdVmId")
+            } else {
+                s.setAttribute("vms", createdVmId :: s.getTypedAttribute[List[String]]("vms") ).removeAttribute("createdVmId")
+            }
         }
         else{
-            LOG.error("can't get virtual machine {}", vmkey); s
+            LOG.error("virtual machine creation error"); s
         }
+    }
+
+    val foreachVm:ChainBuilder => ChainBuilder = currentVmChain => repeat("${vms.size()}", "vmsIndex") {
+            exec(s => s.setAttribute("currentVmId",
+                s.getTypedAttribute[List[String]]("vms")(s.getTypedAttribute[Int]("vmsIndex"))) )
+            .exec(currentVmChain)
+            .exec(s => s.removeAttribute("currentVmId"))
     }
 
     val factory   = XMLInputFactory.newInstance()
@@ -183,7 +196,8 @@ object AbiquoAPI {
         else { LOGREPO.info("can't create vapp (or not undeploy)") }
 
         LOG.trace("{}",s);
-        s.removeAttribute("virtualApplianceState")
+        s.removeAttribute("virtualApplianceState").removeAttribute("virtualapplianceId").removeAttribute("vms")
+        .removeAttribute("currentVmState").removeAttribute("currentVmBody").removeAttribute("currentVmTasks")
     }
 
     val printSession:Session => Session = s => {

@@ -150,7 +150,7 @@ object API {
                 "datacenterId"->"${datacenterId}",
                 "templateId"  ->"${templateId}")
             )
-            check( status is CREATED, captureCurrentVirtualmachineId )
+            check( status is CREATED, captureCreatedVirtualmachineId )
         )
 
     val createVdc = exec(http("VDC_POST")

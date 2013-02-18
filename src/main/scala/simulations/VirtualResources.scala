@@ -31,9 +31,8 @@ class VirtualResources extends Simulation {
             }
         }
 
-    val foreachVmHeplDeploy = repeat("${numVms}", "numVm") {
-            exec(setCurrentVmId)
-            .exec(updateVmState)
+    val foreachVmHeplDeploy = foreachVm(
+            exec(updateVmState)
             .doIf(isNotVmState("ON")) {
                 exec(logVmState("deploy fail"))
             }
@@ -43,12 +42,10 @@ class VirtualResources extends Simulation {
             .doIf(isVmState("OFF")) {
                 exec(powerOnVm)
             }
-            .exec(clearCurrentVmId)
-        }
+        )
 
-    val foreachVmHeplUndeploy = repeat("${numVms}", "numVm") {
-            exec(setCurrentVmId)
-            .exec(updateVmState)
+    val foreachVmHeplUndeploy = foreachVm(
+            exec(updateVmState)
             .doIf(isNotVmState("NOT_ALLOCATED")) {
                 exec(logVmState("undeploy fail"))
             }
@@ -58,8 +55,7 @@ class VirtualResources extends Simulation {
             .doIf(isVmState("OFF")) {
                 exec(undeployVm)
             }
-            .exec(clearCurrentVmId)
-        }
+        )
 
     val waitVappDeployed = exec(updateVappState).asLongAs(isNotVappState("DEPLOYED")) {
             pause(pollPause)
@@ -89,9 +85,8 @@ class VirtualResources extends Simulation {
             .exec(reconfigVm)
     	}
 
-    val foreachVm = repeat("${numVms}", "numVm") {
-            exec(setCurrentVmId)
-            .doIf("${powerOffVm}", "true") {
+    val powerOffVms = foreachVm(
+            doIf("${powerOffVm}", "true") {
                 tryMax(retry) {
                     exec(powerOffVm)
                 }
@@ -102,8 +97,7 @@ class VirtualResources extends Simulation {
                     )
                 }
             }
-            .exec(clearCurrentVmId)
-        } // wait the vapp state
+        )// wait the vapp state
 
     val deployVappHard =
             exec(deployStartTime)
@@ -120,12 +114,10 @@ class VirtualResources extends Simulation {
             .exec(undeployStopTime)
             .exec(logVappState("undeploy"))
 
-    val report = repeat("${numVms}", "numVm") {
-            exec(setCurrentVmId)
-            .exec(getVmTasks)
+    val report = foreachVm(
+            exec(getVmTasks)
             .exec(reportTasks)
-            .exec(clearCurrentVmId)
-        }
+        )
 
     val createVappAndAddVms = exitBlockOnFail {
             tryMax(retry) {
@@ -134,7 +126,7 @@ class VirtualResources extends Simulation {
             .repeat("${numVms}", "numVm") {
                 tryMax(retry) {
                     exec(createVm)
-                    .exec(saveCurrentVmId)
+                    .exec(saveCreatedVm)
                 }
             }
         }
@@ -145,7 +137,7 @@ class VirtualResources extends Simulation {
             .repeat("${vappDeployTime}", "deployed") { // pauseCustom ?
                 pause(1)
             }
-            .exec(foreachVm)
+            .exec(powerOffVms)
             .exec(waitVappDeployed)
             .doIfOrElse("${undeployVapp}", "true") {
                 exec(undeployVappHard)
