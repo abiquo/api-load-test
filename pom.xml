@@ -8,7 +8,8 @@
 
     <properties>
         <abiquo-model.version>2.3.0-SNAPSHOT</abiquo-model.version>
-        <gatling.version>1.4.2</gatling.version>
+        <gatling.version>1.4.3</gatling.version>
+        <scala.version>2.9.3-RC2</scala.version>
         <scala-maven-plugin.version>3.1.2</scala-maven-plugin.version>
     </properties>
 
@@ -17,6 +18,18 @@
             <groupId>com.excilys.ebi.gatling.highcharts</groupId>
             <artifactId>gatling-charts-highcharts</artifactId>
             <version>${gatling.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.scala-lang</groupId>
+                    <artifactId>scala-library</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -27,7 +40,7 @@
     </dependencies>
 
     <build>
-        <sourceDirectory>src/main/scala/simulations</sourceDirectory>
+        <sourceDirectory>src/test/scala/simulations</sourceDirectory>
         <testSourceDirectory>src/test/scala</testSourceDirectory>
         <plugins>
             <plugin>
@@ -51,9 +64,9 @@
                 <configuration>
                     <!-- <configFile>gatling.conf</configFile> -->
                     <resultsFolder>results</resultsFolder>
-                    <simulationsFolder>src/main/scala/simulations</simulationsFolder>
-                    <requestBodiesFolder>src/main/resources/request-bodies</requestBodiesFolder>
-                    <dataFolder>src/main/resources/data</dataFolder>
+                    <simulationsFolder>src/test/scala/simulations</simulationsFolder>
+                    <requestBodiesFolder>src/test/resources/request-bodies</requestBodiesFolder>
+                    <dataFolder>src/test/resources/data</dataFolder>
                     <includes>
                         <include>**/${simulation}.scala</include>
                     </includes>

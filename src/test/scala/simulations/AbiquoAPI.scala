@@ -100,7 +100,7 @@ object AbiquoAPI {
     val checkLuserId                   = regex("""users/${luserId}""") find(0) exists
     val captureRackId                  = regex("""racks/(\d+)""") find(0) saveAs("rackId")
     val captureMachineId               = regex("""machines/(\d+)""") find(0) saveAs("machineId")
-    val captureErrors:String=>HttpCheck[_] = exec => xpath("""/errors/error/code""").findAll.notExists.saveAs("error-"+exec)
+    val captureErrors:String=>HttpCheck[_] = exec => xpath("""/errors/error/code""").notExists.saveAs("error-"+exec)
     val captureVirtualapplianceState   = xpath("""/virtualApplianceState/power""").find.exists.saveAs("virtualApplianceState")
     val captureVirtualapplianceId      = regex("""virtualappliances/(\d+)/""").find.exists.saveAs("virtualapplianceId")
     val captureCurrentVmState          = xpath("""/virtualmachinestate/state""").find.exists.saveAs("currentVmState")
