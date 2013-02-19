@@ -26,8 +26,7 @@ class VirtualResources extends Simulation {
             .exec(updateVmState)
             .exec(logVmState("wait off"))
             .doIf(isVmState("ON")) {
-                exec(logVmState("off fail"))
-                .exec(powerOffVm)
+                exec(powerOffVm)
             }
         }
 
@@ -62,8 +61,7 @@ class VirtualResources extends Simulation {
             .exec(updateVappState)
             .exec(logVappState("wait deploy"))
             .doIf(isVappState("NOT_DEPLOYED", "NEEDS_SYNC")) { // wait "UNKNOWN"
-                exec(logVappState("deploy fail"))
-                .exec(foreachVmHeplDeploy)
+                exec(foreachVmHeplDeploy)
                 .exec(updateVappState)
             }
         }
@@ -73,8 +71,7 @@ class VirtualResources extends Simulation {
             .exec(updateVappState)
             .exec(logVappState("wait undeploy"))
             .doIf(isVappState("DEPLOYED", "NEEDS_SYNC")) { // wait "UNKNOWN"
-                exec(logVappState("undeploy fail"))
-                .exec(foreachVmHeplUndeploy)
+                exec(foreachVmHeplUndeploy)
                 .exec(updateVappState)
             }
         }
@@ -100,19 +97,12 @@ class VirtualResources extends Simulation {
         )// wait the vapp state
 
     val deployVappHard =
-            exec(deployStartTime)
-            .exec(deployVapp)
+            exec(deployVapp)
             .exec(waitVappDeployed)
-            .exec(deployStopTime)
-            .exec(logVappState("deploy"))
-
 
     val undeployVappHard =
-            exec(undeployStartTime)
-            .exec(undeployVapp)
+            exec(undeployVapp)
             .exec(waitVappUndeployed)
-            .exec(undeployStopTime)
-            .exec(logVappState("undeploy"))
 
     val report = foreachVm(
             exec(getVmTasks)
@@ -121,7 +111,7 @@ class VirtualResources extends Simulation {
 
     val createVappAndAddVms = exitBlockOnFail {
             tryMax(retry) {
-                createVapp
+                exec(createVapp)
             }
             .repeat("${numVms}", "numVm") {
                 tryMax(retry) {
@@ -144,13 +134,13 @@ class VirtualResources extends Simulation {
                 .exec(report)
                 .doIf("${deleteVapp}", "true") {
                     tryMax(retry) {
-                        deleteVapp
+                        exec(deleteVapp)
                     }
                 }
             } {
                 exec(report)
             }
-            .exec(reportUserLoop)
+            .exec(vappDone)
             .exec(stadistics, listByEnterprise)
         }
 
@@ -164,14 +154,14 @@ class VirtualResources extends Simulation {
             .repeat("${numVdcs}", "vdcLoop") {
                 exitBlockOnFail {
                     tryMax(retry) {
-                        createVdc
+                        exec(createVdc)
                     }
                     .repeat("${numVapps}", "vapLoop") {
-                        deployVappChain
+                        exec(deployVappChain)
                     }
                     .doIf("${deleteVdc}", "true") {
                         tryMax(retry) {
-                            deleteVdc
+                            exec(deleteVdc)
                         }
                     }
                 }

@@ -1,4 +1,3 @@
-import java.lang.System.{ currentTimeMillis, nanoTime }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import com.excilys.ebi.gatling.core.Predef._
@@ -137,7 +136,6 @@ object AbiquoAPI {
 
     val reconfigureVmBody:Session => String = s => {
         if(!s.isAttributeDefined("currentVmBody")) {
-            printSession(s)
             "failed-currentVmBody"
         } else {
             val vmcontent = s.getTypedAttribute[String]("currentVmBody")
@@ -167,11 +165,6 @@ object AbiquoAPI {
         }
     }
 
-    val deployStartTime:Session  => Session = s => s.setAttribute("deployStartTime",   currentTimeMillis)
-    val deployStopTime:Session   => Session = s => s.setAttribute("deployStopTime",    currentTimeMillis)
-    val undeployStartTime:Session=> Session = s => s.setAttribute("undeployStartTime", currentTimeMillis)
-    val undeployStopTime:Session => Session = s => s.setAttribute("undeployStopTime",  currentTimeMillis)
-
     def isVirtualApplianceState(states:Set[String])(n:Boolean)(s:Session):Boolean = {
         val c = s.isAttributeDefined("virtualApplianceState")  && states.contains(s.getTypedAttribute[String]("virtualApplianceState"))
         if(n){c}else{!c}
@@ -186,22 +179,15 @@ object AbiquoAPI {
     val isVmState:(String*)     => (Session) => (Boolean) = (states) => isVirtualMachineState(states.toSet)(true)
     val isNotVmState:(String*)  => (Session) => (Boolean) = (states) => isVirtualMachineState(states.toSet)(false)
 
-    val reportUserLoop:Session => Session = s => {
-        if(s.isAttributeDefined("virtualApplianceState") && s.isAttributeDefined("undeployStopTime"))  {
-            LOGREPO.info("vapp {}\t deployMs {}\t undeployMs {}",
-                s.getTypedAttribute[String]("virtualapplianceId"),
-                (s.getTypedAttribute[Long]("deployStopTime") - s.getTypedAttribute[Long]("deployStartTime")).asInstanceOf[java.lang.Long],
-                (s.getTypedAttribute[Long]("undeployStopTime") - s.getTypedAttribute[Long]("undeployStartTime")).asInstanceOf[java.lang.Long])
+    val vappDone:Session => Session = s => {
+        if(s.isAttributeDefined("virtualapplianceId"))  {
+            LOGREPO.info("vapp {} done ", s.getTypedAttribute[String]("virtualapplianceId"))
         }
-        else { LOGREPO.info("can't create vapp (or not undeploy)") }
+        else { LOGREPO.info("can't create vapp") }
 
         LOG.trace("{}",s);
         s.removeAttribute("virtualApplianceState").removeAttribute("virtualapplianceId").removeAttribute("vms")
         .removeAttribute("currentVmState").removeAttribute("currentVmBody").removeAttribute("currentVmTasks")
-    }
-
-    val printSession:Session => Session = s => {
-        LOG.info("{}",s); s
     }
 
     def logVirtualApplianceStateC(msg:String)(s:Session) = {
