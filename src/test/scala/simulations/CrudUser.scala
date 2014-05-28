@@ -8,7 +8,7 @@ import akka.util.duration._
 
 class CrudUser  extends Simulation {
 
-	val duration = 29 minutes;
+	val duration = 1 minutes;
 
 	val crudUser = exec(createUser)
 		.exitHereIfFailed
@@ -23,21 +23,22 @@ class CrudUser  extends Simulation {
 	val write = scenario("crudUser")
 			.feed(loginFeed)
 			.exec(login)
+			.exitHereIfFailed
 			.feed(csv("users.csv").circular)
 			.during(duration) {
-			//.repeat(100) {
 				crudUser
 			}
 
 	val read = scenario("readUsers")
 			.feed(loginFeed)
 			.exec(login)
+			.exitHereIfFailed
 			.during(duration) {
 				getUsers
 			}
 
 	setUp(
-            write users(numUsers) ramp( rampTime seconds)                 protocolConfig httpConf,
-            read  users(60)       delay(rampTime seconds) ramp(1 minutes) protocolConfig httpConf
+            write users(numUsers) ramp( rampTime seconds)                 protocolConfig httpConf
+            //,read  users(60)       delay(rampTime seconds) ramp(1 minutes) protocolConfig httpConf
 	)
 }

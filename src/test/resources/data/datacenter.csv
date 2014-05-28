@@ -1,2 +1,2 @@
 datacenterId,hypervisorType,templateId
-1,VBOX,7
+1,KVM,2

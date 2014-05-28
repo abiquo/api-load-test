@@ -4,10 +4,10 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.abiquo</groupId>
     <artifactId>api-load-test</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
 
     <properties>
-        <abiquo-model.version>2.3.0-SNAPSHOT</abiquo-model.version>
+        <abiquo-model.version>3.0.0</abiquo-model.version>
         <gatling.version>1.4.3</gatling.version>
         <scala.version>2.9.3-RC2</scala.version>
         <scala-maven-plugin.version>3.1.2</scala-maven-plugin.version>

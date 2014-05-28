@@ -21,7 +21,7 @@ import bootstrap._
 
 
 object AbiquoAPI {
-    val ABQ_VERSION = """; version=2.4 """
+    val ABQ_VERSION = """; version=3.0 """
 
     val MT_USER     = """application/vnd.abiquo.user+xml""" + ABQ_VERSION
     val MT_USERS    = """application/vnd.abiquo.users+xml""" + ABQ_VERSION

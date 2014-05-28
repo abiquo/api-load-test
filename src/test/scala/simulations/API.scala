@@ -142,7 +142,7 @@ object API {
         )
 
     val createVm = exec(http("VM_POST")
-            post(VMS) header(ACCEPT, MT_VM) header(CONTENT_TYPE, MT_VM_NODE)
+            post(VMS) header(ACCEPT, MT_VM) header(CONTENT_TYPE, MT_VM)
             basicAuth("${loginuser}","${loginpassword}")
             fileBody("vm.xml",
             Map("name"        -> "myVirtualmachine",

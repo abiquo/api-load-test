@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<virtualmachinewithnode>
-    <link href="http://localhost:8080/api/admin/enterprises/<%= enterpriseId %>/datacenterrepositories/<%= datacenterId %>/virtualmachinetemplates/<%= templateId %>" rel="virtualmachinetemplate" />
-    <nodeName><%= name %></nodeName>
-    <description>this is a test, this is only a test</description>
-</virtualmachinewithnode>
+<virtualMachine>
+    <link rel="virtualmachinetemplate" href="http://10.60.1.223:80/api/admin/enterprises/<%= enterpriseId %>/datacenterrepositories/<%= datacenterId %>/virtualmachinetemplates/<%= templateId %>"/>
+    <label><%= name %></label>
+    <idState>0</idState>
+    <idType>0</idType>
+    <highDisponibility>0</highDisponibility>
+</virtualMachine>

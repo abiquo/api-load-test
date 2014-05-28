@@ -1,25 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <virtualDatacenter>
-	<link href="http://localhost:8080/api/admin/datacenters/<%= datacenterId %>" rel="datacenter" />
-	<link href="http://localhost:8080/api/admin/enterprises/<%= enterpriseId %>" rel="enterprise" />
+    <link rel="location" type="application/vnd.abiquo.datacenter+xml; version=3.0" href="http://localhost/api/cloud/locations/<%= datacenterId %>"/>
+    <link rel="enterprise" href="http://localhost/api/admin/enterprises/<%= enterpriseId %>"/>
+    <hypervisorType><%= hypervisorType %></hypervisorType>
 	<name><%= name %></name>
-	<hypervisorType><%= hypervisorType %></hypervisorType>
-	<network>
-		<address>192.168.0.0</address>
-		<gateway>192.168.0.1</gateway>
-		<mask>24</mask>
-		<name>default_private_network</name>
-	</network>
-	<cpuHard>0</cpuHard>
-	<cpuSoft>0</cpuSoft>
-	<hdHard>0</hdHard>
-	<hdSoft>0</hdSoft>
-	<publicIpsHard>0</publicIpsHard>
-	<publicIpsSoft>0</publicIpsSoft>
-	<ramHard>0</ramHard>
-	<ramSoft>0</ramSoft>
-	<storageHard>0</storageHard>
-	<storageSoft>0</storageSoft>
-	<vlansHard>0</vlansHard>
-	<vlansSoft>0</vlansSoft>
+    <cpuHard>0</cpuHard>
+    <cpuSoft>0</cpuSoft>
+    <ramHard>0</ramHard>
+    <ramSoft>0</ramSoft>
+    <vlansHard>0</vlansHard>
+    <vlansSoft>0</vlansSoft>
+    <publicIpsHard>0</publicIpsHard>
+    <publicIpsSoft>0</publicIpsSoft>
+    <network>
+        <name>default</name>
+        <address>192.168.1.0</address>
+        <mask>24</mask>
+        <gateway>192.168.1.5</gateway>
+        <ipv6>false</ipv6>
+        <strict>false</strict>
+    </network>
 </virtualDatacenter>
