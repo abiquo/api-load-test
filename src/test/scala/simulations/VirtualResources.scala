@@ -96,13 +96,15 @@ class VirtualResources extends Simulation {
             }
         )// wait the vapp state
 
-    val deployVappHard =
+    val deployVappHard = exitBlockOnFail {
             exec(deployVapp)
             .exec(waitVappDeployed)
+        }
 
-    val undeployVappHard =
+    val undeployVappHard = exitBlockOnFail {
             exec(undeployVapp)
             .exec(waitVappUndeployed)
+        }
 
     val report = foreachVm(
             exec(getVmTasks)
