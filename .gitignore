@@ -6,3 +6,4 @@ src/main/cache/*
 .project
 .settings/
 .cache
+src/test/resources/data/fontconfig/
