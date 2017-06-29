@@ -10,6 +10,6 @@
 	<locale>en_US</locale>
 	<name><%= lusername %></name>
 	<nick><%= lusernick %></nick>
-	<password>a</password>
+	<password>012345678</password>
 	<surname>a</surname>
 </user>
