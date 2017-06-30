@@ -3,6 +3,12 @@ Abiquo API load test
 
 This repo contains [Gatling scripts](https://github.com/excilys/gatling) to test the [Abiquo API](http://community.abiquo.com/display/ABI22/API+Reference)
 
+java8 not supported
+-------------------
+Scala version being used doesn't support java8, so:
+- cannot use last api-model-transport
+- should use jenv or similar to force java7
+
 Run using Maven
 ------------------
 
