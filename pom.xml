@@ -96,7 +96,7 @@
         <repository>
             <id>excilys</id>
             <name>Excilys Repository</name>
-            <url>http://repository.excilys.com/content/groups/public</url>
+            <url>file://${basedir}/repository_excilys</url>
         </repository>
     </repositories>
 
@@ -104,7 +104,7 @@
         <pluginRepository>
             <id>excilys</id>
             <name>Excilys Repository</name>
-            <url>http://repository.excilys.com/content/groups/public</url>
+            <url>file://${basedir}/repository_excilys</url>
         </pluginRepository>
     </pluginRepositories>
 
